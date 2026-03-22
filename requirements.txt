@@ -3,3 +3,5 @@ pandas
 fpdf2
 supabase
 openpyxl
+httpx
+postgrest
