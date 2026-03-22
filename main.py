@@ -3,6 +3,9 @@ import flet as ft
 import os
 import shutil
 import urllib.request # Added to fetch images for the PDF fix
+import tempfile # ADDED: Crucial for Android file writing permissions
+import pandas as pd # MOVED TO TOP: Required for APK builder
+from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 
@@ -538,48 +541,51 @@ def main(page: ft.Page):
         refresh()
 
     def export_routines_excel(e=None):
-        import pandas as pd
         data = supabase.table("routines").select("*").execute().data
         df = pd.DataFrame(data)
-        filename = f"Briks_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # UPDATED: Use tempfile to write without crashing on mobile
+        base_name = f"Briks_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = os.path.join(tempfile.gettempdir(), base_name)
         df.to_excel(filename, index=False)
-        page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {filename}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {base_name}"))
         page.snack_bar.open = True
         page.update()
     
     def export_excel(e=None):
-        import pandas as pd
         data = supabase.table("inters").select("*").execute().data
         df = pd.DataFrame(data)
-        filename = f"Briks_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # UPDATED
+        base_name = f"Briks_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = os.path.join(tempfile.gettempdir(), base_name)
         df.to_excel(filename, index=False)
-        page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {filename}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
         page.snack_bar.open = True
         page.update()
 
     def export_molds_excel(e=None):
-        import pandas as pd
         data = supabase.table("molds").select("*").execute().data
         df = pd.DataFrame(data)
-        filename = f"Briks_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # UPDATED
+        base_name = f"Briks_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = os.path.join(tempfile.gettempdir(), base_name)
         df.to_excel(filename, index=False)
-        page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {filename}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
         page.snack_bar.open = True
         page.update()
 
     def export_inventory_excel(e=None):
-        import pandas as pd
         data = supabase.table("inventory").select("*").execute().data
         df = pd.DataFrame(data)
-        filename = f"Briks_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # UPDATED
+        base_name = f"Briks_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        filename = os.path.join(tempfile.gettempdir(), base_name)
         df.to_excel(filename, index=False)
-        page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {filename}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {base_name}"))
         page.snack_bar.open = True
         page.update()
 
     def generate_weekly_pdf(e=None):
         try:
-            from fpdf import FPDF
             last_week = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
             data = supabase.table("routines").select("*").gte("dt", last_week).execute().data
             
@@ -598,26 +604,23 @@ def main(page: ft.Page):
                 checklist = f"Gr:{r['graissage']}, Hu:{r['huilage']}, Se:{r['serrage']}, Sec:{r['securite']}"
                 pdf.cell(40, 8, str(r['dt']), 1); pdf.cell(40, 8, str(r['machine']), 1); pdf.cell(30, 8, str(r['user']), 1); pdf.cell(80, 8, checklist, 1); pdf.ln()
             
-            fname = f"Rapport_Hebdo_{datetime.now().strftime('%Y%W')}.pdf"
+            # UPDATED
+            base_name = f"Rapport_Hebdo_{datetime.now().strftime('%Y%W')}.pdf"
+            fname = os.path.join(tempfile.gettempdir(), base_name)
             pdf.output(fname)
-            page.snack_bar = ft.SnackBar(ft.Text(f"Rapport Hebdo créé: {fname}"))
+            page.snack_bar = ft.SnackBar(ft.Text(f"Rapport Hebdo créé: {base_name}"))
             page.snack_bar.open = True
             page.update()
         except Exception as ex:
-            # THIS IS WHERE YOUR CODE CUT OFF - FIXED AND COMPLETED
             page.snack_bar = ft.SnackBar(ft.Text(f"Erreur : {ex}"))
             page.snack_bar.open = True
             page.update()
 
-    # --- ADDED TO FIX PDF IMAGE PROBLEM ---
     def export_pdf(row):
-        from fpdf import FPDF
-        import os
-        
         pdf = FPDF()
         pdf.add_page()
         
-        # Header (exactly mimicking your screenshot's layout)
+        # Header 
         pdf.set_font("Arial", 'B', 22)
         pdf.set_text_color(140, 0, 0) # Red
         pdf.cell(190, 10, "BRIKS", ln=True, align='C')
@@ -635,7 +638,6 @@ def main(page: ft.Page):
         pdf.cell(90, 8, f"Intervenant: {row.get('intervenant', '')}", border=1, ln=True)
         pdf.ln(5)
         
-        # Helper to draw Image Box sections and download image to a temporary local file 
         def draw_section(title, desc, photo_url, y_start):
             pdf.set_xy(10, y_start)
             pdf.set_font("Arial", 'B', 9)
@@ -657,17 +659,13 @@ def main(page: ft.Page):
             pdf.set_xy(110, y_start + 8)
             pdf.cell(80, 40, "", border=1, ln=True)
             
-            # DOWNLOAD AND INSERT IMAGE WORKAROUND
             if photo_url and str(photo_url).startswith("http"):
                 try:
-                    # Create a random temporary file name
-                    temp_img = f"temp_img_{os.urandom(4).hex()}.jpg"
+                    # UPDATED temporary image file path
+                    temp_img = os.path.join(tempfile.gettempdir(), f"temp_img_{os.urandom(4).hex()}.jpg")
                     urllib.request.urlretrieve(photo_url, temp_img)
                     
-                    # Insert the local file into the PDF (perfectly sizing it inside the box)
                     pdf.image(temp_img, x=112, y=y_start + 10, w=76, h=36)
-                    
-                    # Delete it immediately so it doesn't clutter your drive
                     os.remove(temp_img)
                 except Exception as e:
                     print(f"Erreur de chargement d'image: {e}")
@@ -693,18 +691,16 @@ def main(page: ft.Page):
         pdf.cell(95, 5, "Chef de Production", align='C')
         pdf.cell(95, 5, "Service Maintenance", align='C', ln=True)
         
-        fname = f"Rapport_{row.get('id', 'N')}_{datetime.now().strftime('%H%M%S')}.pdf"
+        # UPDATED
+        base_name = f"Rapport_{row.get('id', 'N')}_{datetime.now().strftime('%H%M%S')}.pdf"
+        fname = os.path.join(tempfile.gettempdir(), base_name)
         pdf.output(fname)
         
-        page.snack_bar = ft.SnackBar(ft.Text(f"Rapport PDF généré : {fname}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"Rapport PDF généré : {base_name}"))
         page.snack_bar.open = True
         page.update()
 
-    # Part PDF generator also applying the temporary local file trick
     def export_part_pdf(row):
-        from fpdf import FPDF
-        import os
-        
         pdf = FPDF()
         pdf.add_page()
         pdf.set_font("Arial", 'B', 16)
@@ -720,17 +716,20 @@ def main(page: ft.Page):
         
         if row.get('photo_path') and row.get('photo_path').startswith("http"):
             try:
-                temp_img = f"temp_part_{os.urandom(4).hex()}.jpg"
+                # UPDATED temporary image file path
+                temp_img = os.path.join(tempfile.gettempdir(), f"temp_part_{os.urandom(4).hex()}.jpg")
                 urllib.request.urlretrieve(row['photo_path'], temp_img)
                 pdf.image(temp_img, x=10, y=pdf.get_y() + 10, w=100)
                 os.remove(temp_img)
             except Exception as e:
                 print(f"Erreur d'image pièce: {e}")
         
-        fname = f"Demande_Piece_{row.get('id', 'N')}.pdf"
+        # UPDATED
+        base_name = f"Demande_Piece_{row.get('id', 'N')}.pdf"
+        fname = os.path.join(tempfile.gettempdir(), base_name)
         pdf.output(fname)
         
-        page.snack_bar = ft.SnackBar(ft.Text(f"PDF généré : {fname}"))
+        page.snack_bar = ft.SnackBar(ft.Text(f"PDF généré : {base_name}"))
         page.snack_bar.open = True
         page.update()
 

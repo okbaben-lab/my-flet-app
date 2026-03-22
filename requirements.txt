@@ -1,2 +1,5 @@
 flet
 supabase
+pandas
+openpyxl
+fpdf
