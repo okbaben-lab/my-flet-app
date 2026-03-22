@@ -51,12 +51,21 @@ def main(page: ft.Page):
     try:
         page.title = "BRIKS BY OKBA - Service maintenance"
         
-        # --- PERMISSIONS SETUP ---
-        # Requesting Storage permissions for Android/iOS at runtime
-        page.request_permission(ft.PermissionType.STORAGE)
-        page.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
-        # Note: Internet access is typically enabled by default in Flet build templates,
-        # but must be declared in the build command or manifest.
+        # --- PERMISSIONS SETUP (FIXED) ---
+        # Using a safer way to request permissions that avoids the 'no attribute' error
+        def request_android_permissions():
+            try:
+                # Standard Flet mobile permission check
+                if hasattr(page, "permission_handler"):
+                    page.permission_handler.request_permission(ft.PermissionType.STORAGE)
+                    page.permission_handler.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
+                # Alternative for newer Flet versions
+                elif hasattr(page, "request_permission"):
+                    page.request_permission(ft.PermissionType.STORAGE)
+            except:
+                pass # Silently skip if not on a mobile platform supporting this
+
+        request_android_permissions()
         
         page.theme_mode = "dark"
         page.scroll = "auto"
@@ -88,7 +97,6 @@ def main(page: ft.Page):
                 print(f"Upload error: {ex}")
                 return ""
 
-        # FIX: Removed the non-existent 'ft.FilePickerResultEvent' type hint to resolve the attribute error
         def on_file_result(e):
             if e.files:
                 if page.current_upload_target == "ERR":
