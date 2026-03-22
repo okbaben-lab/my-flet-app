@@ -1,5 +1,5 @@
 flet
-supabase
 pandas
+fpdf
+supabase
 openpyxl
-fpdf2
