@@ -3,8 +3,8 @@ name: Build Briks Maintenance APK
 on:
   push:
     branches:
-      - main  # Runs every time you push code to the main branch
-  workflow_dispatch: # Allows you to run it manually from the "Actions" tab
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,19 +22,23 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet pandas fpdf supabase openpyxl httpx postgrest
+          # Force upgrade flet to ensure the latest CLI arguments work
+          pip install flet --upgrade
+          pip install pandas fpdf supabase openpyxl httpx postgrest
 
-      - name: Setup Flutter (Required for Flet Build)
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
       - name: Build APK
         run: |
-          # This command fixes the name and bundles the libraries
+          # Changed --project-name to --product
+          # Added --icon "icon.png" as you requested
           flet build apk \
-            --project-name "Briks By Okba" \
+            --product "Briks By Okba" \
             --org "com.okba.briks" \
+            --icon "icon.png" \
             --include-packages pandas,fpdf,supabase,openpyxl,httpx,postgrest
 
       - name: Upload APK Artifact
