@@ -1,44 +1,44 @@
-- name: Build APK
-  run: |
-    flet build apk --project-name "Briks By Okba" --icon "logo.png" --include-packages pandas,fpdf,supabase,httpx,postgrest
+name: Build Briks Maintenance APK
+
 on:
-  workflow_dispatch: # Allows you to run this manually
+  push:
+    branches:
+      - main  # Runs every time you push code to the main branch
+  workflow_dispatch: # Allows you to run it manually from the "Actions" tab
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      - name: Install Flet CLI
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet
+          pip install flet pandas fpdf supabase openpyxl httpx postgrest
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Set up Flutter
+      - name: Setup Flutter (Required for Flet Build)
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
       - name: Build APK
         run: |
-          # This command uses your requirements.txt automatically
-          flet build apk --verbose
+          # This command fixes the name and bundles the libraries
+          flet build apk \
+            --project-name "Briks By Okba" \
+            --org "com.okba.briks" \
+            --include-packages pandas,fpdf,supabase,openpyxl,httpx,postgrest
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: flet-app-apk
+          name: Briks-Maintenance-App
           path: build/apk/*.apk
