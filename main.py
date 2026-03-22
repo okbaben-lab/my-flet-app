@@ -3,7 +3,7 @@ import flet as ft
 import os
 import shutil
 import urllib.request # Added to fetch images for the PDF fix
-import tempfile # ADDED: Crucial for Android file writing permissions
+import tempfile # ARDED: Crucial for Android file writing permissions
 import pandas as pd # MOVED TO TOP: Required for APK builder
 from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
@@ -50,6 +50,14 @@ def main(page: ft.Page):
     # SHIELD: Catch any rendering errors so we don't get a black screen
     try:
         page.title = "BRIKS BY OKBA - Service maintenance"
+        
+        # --- PERMISSIONS SETUP ---
+        # Requesting Storage permissions for Android/iOS at runtime
+        page.request_permission(ft.PermissionType.STORAGE)
+        page.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
+        # Note: Internet access is typically enabled by default in Flet build templates,
+        # but must be declared in the build command or manifest.
+        
         page.theme_mode = "dark"
         page.scroll = "auto"
         page.logged_in = False
@@ -80,7 +88,8 @@ def main(page: ft.Page):
                 print(f"Upload error: {ex}")
                 return ""
 
-        def on_file_result(e: ft.FilePickerResultEvent):
+        # FIX: Removed the non-existent 'ft.FilePickerResultEvent' type hint to resolve the attribute error
+        def on_file_result(e):
             if e.files:
                 if page.current_upload_target == "ERR":
                     page.photo_err_path = e.files[0].path
