@@ -22,8 +22,8 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          # Force upgrade flet to ensure the latest CLI arguments work
           pip install flet --upgrade
+          # We install these here so the GitHub environment can prepare the "wheels"
           pip install pandas fpdf supabase openpyxl httpx postgrest
 
       - name: Setup Flutter
@@ -33,13 +33,10 @@ jobs:
 
       - name: Build APK
         run: |
-          # Changed --project-name to --product
-          # Added --icon "icon.png" as you requested
+          # Flet 0.82.2+ automatically uses requirements.txt and the assets/ folder
           flet build apk \
             --product "Briks By Okba" \
-            --org "com.okba.briks" \
-            --icon "icon.png" \
-            --include-packages pandas,fpdf,supabase,openpyxl,httpx,postgrest
+            --org "com.okba.briks"
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
