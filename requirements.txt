@@ -2,4 +2,4 @@ flet
 supabase
 pandas
 openpyxl
-fpdf
+fpdf2
