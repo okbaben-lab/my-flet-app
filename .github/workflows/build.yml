@@ -1,4 +1,6 @@
-name: Build Flet APK
+- name: Build APK
+  run: |
+    flet build apk --project-name "Briks By Okba" --org "com.okba.briks" --include-packages pandas,fpdf,supabase,httpx,postgrest
 on:
   workflow_dispatch: # Allows you to run this manually
 
