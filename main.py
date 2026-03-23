@@ -11,12 +11,12 @@ from supabase import create_client, Client
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
-SUPABASE_KEY = "lbaquqyzbippicbvmcxr" # IMPORTANT: Make sure this is your 'anon public' key starting with eyJ...
+SUPABASE_KEY = "lbaquqyzbippicbvmcxr"
 
 # SHIELD: Wrapped in try-except to prevent global crash if network is slow on app boot
 try:
-    # FIXED: Now strictly using the SUPABASE_KEY variable so it matches your config
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    # Note: Using the publishable key provided in your original create_client call
+    supabase: Client = create_client(SUPABASE_URL, "sb_publishable_qIs62pb-XO17gSwhXubVqg_2ffU7MOl")
 except Exception as e:
     supabase = None
     print(f"Supabase init error: {e}")
@@ -132,7 +132,6 @@ def main(page: ft.Page):
             page.controls.clear()
             
             if not page.logged_in and page.view == "LOGIN":
-                # FIXED: Changed 300 to 320 to fit Android nicely
                 u_in = ft.TextField(label="Utilisateur", width=320)
                 p_in = ft.TextField(label="Mot de passe", password=True, width=320)
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
@@ -180,7 +179,6 @@ def main(page: ft.Page):
                 # Attach the click event to our button
                 login_btn.on_click = login
 
-                # FIXED: Alignment to top_center to avoid Android keyboard completely hiding UI
                 page.add(
                     ft.Container(
                         content=ft.Column([
@@ -193,14 +191,13 @@ def main(page: ft.Page):
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), # FIXED Alignment
-                        alignment=ft.alignment.top_center, # FIXED: Avoid keyboard crush
-                        padding=20, # FIXED: Prevent elements from touching screen edges
+                        alignment=ft.Alignment(0, -1), # FIXED: Manual Coordinates to prevent Android crash and keyboard squeeze
+                        padding=20, # FIXED: Padding for mobile screens
                         expand=True
                     )
                 )
 
             elif page.view == "SIGNUP":
-                # FIXED: Changed 300 to 320 to fit Android nicely
                 new_user = ft.TextField(label="Nom d'utilisateur (Login)", width=320)
                 new_full = ft.TextField(label="Nom complet (Affichage)", width=320)
                 new_pass = ft.TextField(label="Mot de passe", password=True, width=320)
@@ -250,7 +247,6 @@ def main(page: ft.Page):
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), # FIXED Alignment
                     ft.Text(f"Opérateur: {page.display_name}", italic=True, color="grey"),
                     ft.Divider(color="red"),
-                    # FIXED: Changed width 350 to 320 on all buttons to prevent clipping off screen
                     ft.Column([
                         ft.ElevatedButton("INTERVENTION TECHNIQUE", icon=ft.icons.BUILD_CIRCLE,
                                          on_click=lambda _: ch_v("INTER"), width=320, height=55, bgcolor="blue900"),
@@ -322,15 +318,14 @@ def main(page: ft.Page):
                     ft.Text("DEMANDE DE PIÈCE DE RECHANGE", weight="bold", color="orange"),
                     p_mach, p_name, p_qty, p_urg,
                     ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.icons.CAMERA_ALT, on_click=pick_part_img),
-                    ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=320), # FIXED Width
-                    ft.ElevatedButton("HISTORIQUE DEMANDES", icon=ft.icons.LIST_ALT, on_click=lambda _: ch_v("PART_HISTORY"), width=320), # FIXED Width
+                    ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=320),
+                    ft.ElevatedButton("HISTORIQUE DEMANDES", icon=ft.icons.LIST_ALT, on_click=lambda _: ch_v("PART_HISTORY"), width=320),
                     footer_tag
                 )
 
             elif page.view == "PART_HISTORY":
                 reqs = supabase.table("part_requests").select("*").order("id", desc=True).execute().data
-                # FIXED: Removed height=500 to allow expand=True to work smoothly on mobile
-                lv = ft.ListView(expand=True, spacing=10, height=None) 
+                lv = ft.ListView(expand=True, spacing=10, height=None)
                 for r in reqs:
                     lv.controls.append(ft.Container(content=ft.Column([
                         ft.Text(f"REF: PR-2026-{r['id']} | {r['piece_nom']}", weight="bold"),
@@ -404,8 +399,7 @@ def main(page: ft.Page):
                                              actions=[ft.ElevatedButton("Ajouter", on_click=save_new)])
                     page.dialog = add_dlg; add_dlg.open = True; page.update()
 
-                # FIXED: Removed height=400 to allow expand=True to work smoothly
-                stock_lv = ft.ListView(expand=True, spacing=5, height=None) 
+                stock_lv = ft.ListView(expand=True, spacing=5, height=None)
                 search_stock = ft.TextField(label="Chercher une pièce...", prefix_icon=ft.icons.SEARCH, on_change=lambda e: build_stock_list(e.control.value))
                 
                 page.add(
@@ -442,7 +436,7 @@ def main(page: ft.Page):
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("CHECK QUOTIDIEN", weight="bold"),
                     m_dd, c_grease, c_oil, c_elec, c_sec, dur_in,
-                    ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=320), # FIXED Width
+                    ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=320),
                     ft.Row([
                         ft.ElevatedButton("HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("ROUTINE_HISTORY")),
                         ft.ElevatedButton("RAPPORT HEBDO (PDF)", icon=ft.icons.SUMMARIZE, on_click=generate_weekly_pdf, bgcolor="blue900")
@@ -452,8 +446,7 @@ def main(page: ft.Page):
 
             elif page.view == "ROUTINE_HISTORY":
                 rows = supabase.table("routines").select("*").order("id", desc=True).execute().data
-                # FIXED: Removed height=500
-                lv = ft.ListView(expand=True, height=None) 
+                lv = ft.ListView(expand=True, height=None)
                 for r in rows:
                     lv.controls.append(ft.Container(
                         content=ft.Column([
@@ -542,13 +535,12 @@ def main(page: ft.Page):
                     ft.Row([err_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("ERR"), icon_color="red")]),
                     ft.Row([sol_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("SOL"), icon_color="green")]),
                     piec, spare_price_in,
-                    ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=320), # FIXED Width
+                    ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=320),
                     footer_tag
                 )
 
             elif page.view == "HISTORY":
-                # FIXED: Removed height=500
-                lv = ft.ListView(expand=True, spacing=10, height=None) 
+                lv = ft.ListView(expand=True, spacing=10, height=None)
                 
                 def build_history(search_term=""):
                     lv.controls.clear()
@@ -570,7 +562,7 @@ def main(page: ft.Page):
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("HISTORIQUE DES INTERVENTIONS", size=20, weight="bold"),
                     search_bar,
-                    ft.ElevatedButton("EXPORTER EXCEL (INTERVENTIONS)", icon=ft.icons.TABLE_CHART, on_click=export_excel, width=320), # FIXED Width
+                    ft.ElevatedButton("EXPORTER EXCEL (INTERVENTIONS)", icon=ft.icons.TABLE_CHART, on_click=export_excel, width=320),
                     lv,
                     footer_tag)
 
@@ -594,15 +586,14 @@ def main(page: ft.Page):
                 page.add(
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("CHANGEMENT MOULE (SMED)", weight="bold"), p_dd, o_m, n_m,
-                    ft.ElevatedButton("VALIDER", on_click=save_m, width=320), # FIXED Width
-                    ft.ElevatedButton("VOIR HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("MOLD_HISTORY"), width=320, bgcolor="blue900"), # FIXED Width
-                    ft.ElevatedButton("EXPORTER EXCEL (MOULES)", icon=ft.icons.TABLE_CHART, on_click=export_molds_excel, width=320, bgcolor="green700"), # FIXED Width
+                    ft.ElevatedButton("VALIDER", on_click=save_m, width=320),
+                    ft.ElevatedButton("VOIR HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("MOLD_HISTORY"), width=320, bgcolor="blue900"),
+                    ft.ElevatedButton("EXPORTER EXCEL (MOULES)", icon=ft.icons.TABLE_CHART, on_click=export_molds_excel, width=320, bgcolor="green700"),
                     footer_tag)
 
             elif page.view == "MOLD_HISTORY":
                 m_reports = supabase.table("molds").select("*").order("id", desc=True).execute().data
-                # FIXED: Removed height=500
-                lv = ft.ListView(expand=True, spacing=10, height=None) 
+                lv = ft.ListView(expand=True, spacing=10, height=None)
                 for r in m_reports:
                     lv.controls.append(ft.Container(content=ft.Column([
                         ft.Row([ft.Text(f"{r['dt']} - {r['p_no']}", weight="bold")]),
@@ -624,7 +615,6 @@ def main(page: ft.Page):
         def export_routines_excel(e=None):
             data = supabase.table("routines").select("*").execute().data
             df = pd.DataFrame(data)
-            # UPDATED: Use tempfile to write without crashing on mobile
             base_name = f"Briks_By_Okba_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
             df.to_excel(filename, index=False)
@@ -635,7 +625,6 @@ def main(page: ft.Page):
         def export_excel(e=None):
             data = supabase.table("inters").select("*").execute().data
             df = pd.DataFrame(data)
-            # UPDATED
             base_name = f"Briks_By_Okba_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
             df.to_excel(filename, index=False)
@@ -646,7 +635,6 @@ def main(page: ft.Page):
         def export_molds_excel(e=None):
             data = supabase.table("molds").select("*").execute().data
             df = pd.DataFrame(data)
-            # UPDATED
             base_name = f"Briks_By_Okba_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
             df.to_excel(filename, index=False)
@@ -657,7 +645,6 @@ def main(page: ft.Page):
         def export_inventory_excel(e=None):
             data = supabase.table("inventory").select("*").execute().data
             df = pd.DataFrame(data)
-            # UPDATED
             base_name = f"Briks_By_Okba_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
             df.to_excel(filename, index=False)
@@ -685,7 +672,6 @@ def main(page: ft.Page):
                     checklist = f"Gr:{r['graissage']}, Hu:{r['huilage']}, Se:{r['serrage']}, Sec:{r['securite']}"
                     pdf.cell(40, 8, str(r['dt']), 1); pdf.cell(40, 8, str(r['machine']), 1); pdf.cell(30, 8, str(r['user']), 1); pdf.cell(80, 8, checklist, 1); pdf.ln()
                 
-                # UPDATED
                 base_name = f"Rapport_Hebdo_{datetime.now().strftime('%Y%W')}.pdf"
                 fname = os.path.join(tempfile.gettempdir(), base_name)
                 pdf.output(fname)
@@ -742,7 +728,6 @@ def main(page: ft.Page):
                 
                 if photo_url and str(photo_url).startswith("http"):
                     try:
-                        # UPDATED temporary image file path
                         temp_img = os.path.join(tempfile.gettempdir(), f"temp_img_{os.urandom(4).hex()}.jpg")
                         urllib.request.urlretrieve(photo_url, temp_img)
                         
@@ -772,7 +757,6 @@ def main(page: ft.Page):
             pdf.cell(95, 5, "Chef de Production", align='C')
             pdf.cell(95, 5, "Service Maintenance", align='C', ln=True)
             
-            # UPDATED
             base_name = f"Rapport_{row.get('id', 'N')}_{datetime.now().strftime('%H%M%S')}.pdf"
             fname = os.path.join(tempfile.gettempdir(), base_name)
             pdf.output(fname)
@@ -797,7 +781,6 @@ def main(page: ft.Page):
             
             if row.get('photo_path') and row.get('photo_path').startswith("http"):
                 try:
-                    # UPDATED temporary image file path
                     temp_img = os.path.join(tempfile.gettempdir(), f"temp_part_{os.urandom(4).hex()}.jpg")
                     urllib.request.urlretrieve(row['photo_path'], temp_img)
                     pdf.image(temp_img, x=10, y=pdf.get_y() + 10, w=100)
@@ -805,7 +788,6 @@ def main(page: ft.Page):
                 except Exception as e:
                     print(f"Erreur d'image pièce: {e}")
             
-            # UPDATED
             base_name = f"Demande_Piece_{row.get('id', 'N')}.pdf"
             fname = os.path.join(tempfile.gettempdir(), base_name)
             pdf.output(fname)
