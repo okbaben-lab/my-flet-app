@@ -1,48 +1,56 @@
-name: Build Android APK
+name: Build Briks APK
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      # 3. Install Python dependencies
-      - name: Install Dependencies
+      # 1️⃣ Core compilation tools 
+      - name: Install System Dependencies
         run: |
-          pip install flet pandas openpyxl fpdf supabase httpx postgrest
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf automake libtool libltdl-dev \
+            pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev libtinfo-dev libffi-dev \
+            libssl-dev cmake gettext m4 autopoint
 
-      # 4. Set up Flutter
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
+      # 2️⃣ Standard Flet dependencies
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install flet supabase pandas openpyxl fpdf2
 
-      # 5. Build APK
+      # 3️⃣ The Build command with the correct permissions format
       - name: Build Android APK
         run: |
-          flet build apk \
-            --project-name "briks" \
-            --permissions camera \
-            --android-permissions INTERNET,MANAGE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE \
-            --include-packages supabase,pandas,fpdf,openpyxl,httpx,postgrest
+          # The 'echo "y" |' part answers the license prompts automatically
+          echo "y" | flet build apk \
+            --project "briks" \
+            --product "briks" \
+            --android-permissions android.permission.INTERNET=true \
+            --android-permissions android.permission.READ_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.WRITE_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.MANAGE_EXTERNAL_STORAGE=true
 
-      # 6. Upload the APK artifact
+      # 4️⃣ Save the APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: briks-app
+          name: briks-mobile-build
           path: build/apk/*.apk
