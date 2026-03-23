@@ -8,6 +8,7 @@ import pandas as pd # MOVED TO TOP: Required for APK builder
 from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
 from supabase import create_client, Client
+import threading # ADDED: Required for background database tasks
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
@@ -55,18 +56,15 @@ def main(page: ft.Page):
         page.on_error = lambda e: print(f"Ignored Flet UI Error: {e.data}")
         
         # --- PERMISSIONS SETUP (FIXED) ---
-        # Using a safer way to request permissions that avoids the 'no attribute' error
         def request_android_permissions():
             try:
-                # Standard Flet mobile permission check
                 if hasattr(page, "permission_handler"):
                     page.permission_handler.request_permission(ft.PermissionType.STORAGE)
                     page.permission_handler.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
-                # Alternative for newer Flet versions
                 elif hasattr(page, "request_permission"):
                     page.request_permission(ft.PermissionType.STORAGE)
             except:
-                pass # Silently skip if not on a mobile platform supporting this
+                pass 
 
         request_android_permissions()
         
@@ -85,11 +83,10 @@ def main(page: ft.Page):
             if not local_path or not os.path.exists(local_path):
                 return ""
             try:
-                # Generate a completely unique filename using user ID + timestamp with milliseconds
                 user_clean = page.u_id if hasattr(page, 'u_id') else "anon"
                 ts = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
                 ext = os.path.splitext(local_path)[1]
-                if not ext: ext = ".jpg" # fallback extension
+                if not ext: ext = ".jpg" 
                 
                 file_name = f"{folder}/{user_clean}_{ts}{ext}"
                 
@@ -118,15 +115,13 @@ def main(page: ft.Page):
 
         file_picker = ft.FilePicker()
         file_picker.on_result = on_file_result
-        # FIXED: Removed page.overlay.append(file_picker) from startup sequence.
-        # It is now added safely only when a photo button is clicked below to prevent the startup crash.
 
         footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
 
         header_brand = ft.Column([
             ft.Text("BRIKS BY OKBA", size=32, weight="bold", color="red"),
             ft.Text("SERVICE MAINTENANCE", size=12, color="red", italic=True),
-        ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
+        ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
 
         def refresh():
             page.controls.clear()
@@ -135,48 +130,48 @@ def main(page: ft.Page):
                 u_in = ft.TextField(label="Utilisateur", width=320)
                 p_in = ft.TextField(label="Mot de passe", password=True, width=320)
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
-                
-                # --- ADDED: UI elements for loading state ---
                 login_btn = ft.ElevatedButton("ENTRER", width=320, bgcolor="red900")
                 loading_ring = ft.ProgressRing(visible=False, color="red")
                 
                 def login(e):
-                    # --- ADDED: Show loading state ---
                     login_btn.disabled = True
                     loading_ring.visible = True
                     login_error.visible = False
                     page.update()
                     
-                    # ADDED: A try-except block here to catch silent Supabase failures
-                    try:
-                        res = supabase.table("users") \
-                            .select("*") \
-                            .eq("username", u_in.value.lower()) \
-                            .eq("password", p_in.value) \
-                            .execute()
-                        
-                        if res.data:
-                            page.logged_in = True
-                            page.u_id = u_in.value.lower()
-                            page.display_name = res.data[0].get('full_name', u_in.value)
-                            page.view = "HOME"
-                            refresh()
-                        else:
-                            # ADDED: Better error text to warn you about Supabase RLS policies
-                            login_error.value = "Identifiants incorrects ou bloqués par Supabase RLS."
+                    def db_check():
+                        try:
+                            # STRIP added to fix mobile keyboard space bugs
+                            u_val = u_in.value.strip().lower()
+                            p_val = p_in.value.strip()
+
+                            res = supabase.table("users") \
+                                .select("*") \
+                                .eq("username", u_val) \
+                                .eq("password", p_val) \
+                                .execute()
+                            
+                            if res.data and len(res.data) > 0:
+                                page.logged_in = True
+                                page.u_id = u_val
+                                page.display_name = res.data[0].get('full_name', u_val)
+                                page.view = "HOME"
+                                refresh()
+                            else:
+                                login_error.value = "Identifiants incorrects."
+                                login_error.visible = True
+                                login_btn.disabled = False
+                                loading_ring.visible = False
+                                page.update()
+                        except Exception as ex:
+                            login_error.value = f"Erreur: {str(ex)[:40]}"
                             login_error.visible = True
-                    except Exception as ex:
-                        # ADDED: Display actual connection errors on screen
-                        login_error.value = f"Erreur de connexion: {str(ex)}"
-                        login_error.visible = True
-                    finally:
-                        # --- ADDED: Hide loading state if we are still on the login page ---
-                        if page.view == "LOGIN":
                             login_btn.disabled = False
                             loading_ring.visible = False
                             page.update()
+
+                    threading.Thread(target=db_check).start()
                 
-                # Attach the click event to our button
                 login_btn.on_click = login
 
                 page.add(
@@ -186,13 +181,13 @@ def main(page: ft.Page):
                             header_brand, 
                             u_in, p_in,
                             login_error,
-                            loading_ring, # ADDED: The progress ring
-                            login_btn,    # ADDED: The modified login button
+                            loading_ring,
+                            login_btn,
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), # FIXED Alignment
-                        alignment=ft.Alignment(0, -1), # FIXED: Manual Coordinates to prevent Android crash and keyboard squeeze
-                        padding=20, # FIXED: Padding for mobile screens
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        alignment=ft.Alignment(0, -1),
+                        padding=20,
                         expand=True
                     )
                 )
@@ -201,6 +196,7 @@ def main(page: ft.Page):
                 new_user = ft.TextField(label="Nom d'utilisateur (Login)", width=320)
                 new_full = ft.TextField(label="Nom complet (Affichage)", width=320)
                 new_pass = ft.TextField(label="Mot de passe", password=True, width=320)
+                signup_btn = ft.ElevatedButton("S'INSCRIRE", width=320, bgcolor="blue900")
                 
                 def register(e):
                     if not new_user.value or not new_pass.value:
@@ -209,31 +205,44 @@ def main(page: ft.Page):
                         page.update()
                         return
                     
-                    try:
-                        supabase.table("users").insert({
-                            "username": new_user.value.lower(),
-                            "full_name": new_full.value,
-                            "password": new_pass.value
-                        }).execute()
-                        
-                        page.snack_bar = ft.SnackBar(ft.Text("Compte créé avec succès ! Connectez-vous."))
-                        page.snack_bar.open = True
-                        ch_v("LOGIN")
-                    except Exception as ex:
-                        page.snack_bar = ft.SnackBar(ft.Text(f"Erreur : {ex}"))
-                        page.snack_bar.open = True
-                        page.update()
+                    signup_btn.disabled = True
+                    page.update()
 
+                    def db_reg():
+                        try:
+                            # Strip used to ensure saved data doesn't have hidden spaces
+                            u_val = new_user.value.strip().lower()
+                            p_val = new_pass.value.strip()
+                            n_val = new_full.value.strip()
+
+                            supabase.table("users").insert({
+                                "username": u_val,
+                                "full_name": n_val,
+                                "password": p_val
+                            }).execute()
+                            
+                            page.snack_bar = ft.SnackBar(ft.Text("Compte créé ! Connectez-vous."))
+                            page.snack_bar.open = True
+                            ch_v("LOGIN")
+                        except Exception as ex:
+                            page.snack_bar = ft.SnackBar(ft.Text(f"Erreur : {ex}"))
+                            page.snack_bar.open = True
+                            signup_btn.disabled = False
+                            page.update()
+
+                    threading.Thread(target=db_reg).start()
+
+                signup_btn.on_click = register
                 page.add(
                     ft.Column([
                         ft.Container(height=50),
                         header_brand,
                         ft.Text("CRÉER UN COMPTE", weight="bold", size=20),
                         new_user, new_full, new_pass,
-                        ft.ElevatedButton("S'INSCRIRE", on_click=register, width=320, bgcolor="blue900"),
+                        signup_btn,
                         ft.TextButton("Retour à la connexion", on_click=lambda _: ch_v("LOGIN")),
                         footer_tag
-                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                 )
 
             elif page.view == "HOME":
@@ -244,7 +253,7 @@ def main(page: ft.Page):
                             ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
                         ], spacing=0),
                         ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
-                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), # FIXED Alignment
+                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     ft.Text(f"Opérateur: {page.display_name}", italic=True, color="grey"),
                     ft.Divider(color="red"),
                     ft.Column([
@@ -260,7 +269,7 @@ def main(page: ft.Page):
                                          on_click=lambda _: ch_v("MOLD"), width=320, height=55),
                         ft.ElevatedButton("CHECKS QUOTIDIENS / HEBDO", icon=ft.icons.CHECKLIST,
                                          on_click=lambda _: ch_v("ROUTINE"), width=320, height=55, bgcolor="green900"),
-                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), # FIXED Alignment
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15),
                     ft.Divider(),
                     footer_tag
                 )
@@ -305,7 +314,6 @@ def main(page: ft.Page):
                     page.photo_part_path = ""
                     ch_v("HOME")
 
-                # FIXED: Deferred initialization of FilePicker wrapper for Parts
                 def pick_part_img(e):
                     page.current_upload_target = "PART"
                     if file_picker not in page.overlay:
@@ -355,7 +363,7 @@ def main(page: ft.Page):
                             trailing=ft.Column([
                                 ft.Text(f"Qté: {i['stock_qty']}", color="red" if is_low else "white", size=16, weight="bold"),
                                 ft.Text("ALERTE" if is_low else "", color="red", size=10)
-                            ], alignment=ft.MainAxisAlignment.CENTER), # FIXED Alignment
+                            ], alignment=ft.MainAxisAlignment.CENTER),
                             on_click=lambda e, item=i: open_stock_dialog(item)
                         ))
                     page.update()
@@ -493,7 +501,6 @@ def main(page: ft.Page):
                 err_desc = ft.TextField(label="Identification de l'Erreur", multiline=True, expand=True)
                 sol_desc = ft.TextField(label="Solution Apportée", multiline=True, expand=True)
                 
-                # FIXED: Deferred initialization of FilePicker wrapper
                 def pick_img(target):
                     page.current_upload_target = target
                     if file_picker not in page.overlay:
@@ -799,7 +806,6 @@ def main(page: ft.Page):
         refresh()
 
     except Exception as fatal_error:
-        # If the app crashes on launch, this will show the exact error in red text instead of a black screen.
         page.add(ft.Text(f"CRITICAL ERROR: {str(fatal_error)}", color="white", bgcolor="red", size=20, weight="bold"))
         page.update()
 
