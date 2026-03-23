@@ -162,16 +162,21 @@ def main(page: ft.Page):
                         login_error.visible = True
                         page.update()
 
+                # FIXED: Added expand=True and a Container wrapper to properly center without the red overlap
                 page.add(
-                    ft.Column([
-                        ft.Container(height=50),
-                        header_brand, 
-                        u_in, p_in,
-                        login_error,
-                        ft.ElevatedButton("ENTRER", on_click=login, width=300, bgcolor="red900"),
-                        ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
-                        footer_tag
-                    ], horizontal_alignment="center")
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Container(height=50),
+                            header_brand, 
+                            u_in, p_in,
+                            login_error,
+                            ft.ElevatedButton("ENTRER", on_click=login, width=300, bgcolor="red900"),
+                            ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
+                            footer_tag
+                        ], horizontal_alignment="center"),
+                        alignment=ft.alignment.center,
+                        expand=True
+                    )
                 )
 
             elif page.view == "SIGNUP":
