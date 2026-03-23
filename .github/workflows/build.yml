@@ -13,43 +13,58 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      # 1️⃣ Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install System Dependencies
+      # 3️⃣ Install system dependencies (fixes libffi/autoconf errors)
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk \
-            autoconf libtool pkg-config zlib1g-dev \
-            libncurses5-dev libncursesw5-dev libtinfo-dev \
-            libffi-dev libssl-dev cmake gettext m4
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            build-essential \
+            git \
+            python3-dev \
+            libffi-dev \
+            libssl-dev \
+            unzip \
+            zip \
+            openjdk-17-jdk
 
-      - name: Install Pip Dependencies
+      # 4️⃣ Install Buildozer & Kivy
+      - name: Install Buildozer and Kivy
         run: |
-          python -m pip install --upgrade pip setuptools
-          pip install cython==0.29.33 buildozer virtualenv
+          python -m pip install --upgrade pip
+          pip install buildozer cython kivy
 
-      - name: Create and edit buildozer.spec
+      # 5️⃣ Initialize buildozer.spec if missing
+      - name: Create buildozer.spec
         run: |
           if [ ! -f buildozer.spec ]; then
             buildozer init
+            # Set permissions and package info
             sed -i 's/# android.permissions = INTERNET/android.permissions = INTERNET, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE/' buildozer.spec
             sed -i 's/# package.domain = org.test/package.domain = org.example/' buildozer.spec
-            sed -i 's/# title = My Application/title = briks/' buildozer.spec
+            sed -i 's/# title = My Application/title = MyApp/' buildozer.spec
           fi
 
-      - name: Build APK with Buildozer
-        run: |
-          yes | buildozer -v android debug
+      # 6️⃣ Build the APK
+      - name: Build APK
+        run: buildozer android debug
 
+      # 7️⃣ Upload APK as artifact
       - name: Upload APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
-          name: Briks-Python-App
-          path: '**/*.apk'
+          name: myapp-debug.apk
+          path: bin/*.apk
