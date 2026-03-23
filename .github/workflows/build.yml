@@ -1,56 +1,39 @@
-name: Build Briks APK
-
+name: Build Android APK
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      # 1️⃣ Core compilation tools 
-      - name: Install System Dependencies
+      - name: Install Flet and Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk \
-            autoconf automake libtool libltdl-dev \
-            pkg-config zlib1g-dev libncurses5-dev \
-            libncursesw5-dev libtinfo-dev libffi-dev \
-            libssl-dev cmake gettext m4 autopoint
+          pip install flet pandas openpyxl fpdf supabase httpx postgrest
 
-      # 2️⃣ Standard Flet dependencies
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install flet supabase pandas openpyxl fpdf2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
 
-      # 3️⃣ The Build command with the correct permissions format
       - name: Build Android APK
         run: |
-          # The 'echo "y" |' part answers the license prompts automatically
           echo "y" | flet build apk \
-            --project "briks" \
-            --product "briks" \
-            --android-permissions android.permission.INTERNET=true \
-            --android-permissions android.permission.READ_EXTERNAL_STORAGE=true \
-            --android-permissions android.permission.WRITE_EXTERNAL_STORAGE=true \
-            --android-permissions android.permission.MANAGE_EXTERNAL_STORAGE=true
+            --project-name "briks" \
+            --permissions internet camera storage manage_external_storage \
+            --include-packages supabase pandas fpdf openpyxl httpx postgrest
 
-      # 4️⃣ Save the APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: briks-mobile-build
+          name: briks-app
           path: build/apk/*.apk
+          
