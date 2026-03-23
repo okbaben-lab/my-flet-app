@@ -24,7 +24,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flet pandas openpyxl fpdf2 supabase
 
-    - name: Set up Java (Required for Android Build)
+    - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
@@ -33,15 +33,11 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.22.0' # Stable version for Flet
+        flutter-version: '3.22.0'
 
-    - name: Build Android APK with Permissions
+    - name: Build Android APK
       run: |
-        flet build apk \
-          --project "Briks Maintenance" \
-          --product "Briks Maintenance" \
-          --icon "icon.png" \
-          --android-permissions "INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE"
+        flet build apk --android-permissions "INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE"
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
