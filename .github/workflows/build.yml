@@ -1,4 +1,5 @@
 name: Build Android APK
+
 on:
   push:
     branches: [ main ]
@@ -7,34 +8,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
+      # 3. Install Python dependencies
       - name: Install Dependencies
         run: |
-          # Installing all libraries used in your main.py
           pip install flet pandas openpyxl fpdf supabase httpx postgrest
 
+      # 4. Set up Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
+      # 5. Build APK
       - name: Build Android APK
         run: |
-          # 1. 'camera' stays in --permissions (it is a valid choice)
-          # 2. Internet and Storage move to --android-permissions
-          echo "y" | flet build apk \
+          flet build apk \
             --project-name "briks" \
             --permissions camera \
-            --android-permissions android.permission.INTERNET=true android.permission.MANAGE_EXTERNAL_STORAGE=true android.permission.READ_EXTERNAL_STORAGE=true android.permission.WRITE_EXTERNAL_STORAGE=true \
-            --include-packages supabase pandas fpdf openpyxl httpx postgrest
+            --android-permissions INTERNET,MANAGE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE \
+            --include-packages supabase,pandas,fpdf,openpyxl,httpx,postgrest
 
+      # 6. Upload the APK artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
