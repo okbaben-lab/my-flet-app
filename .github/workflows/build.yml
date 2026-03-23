@@ -17,6 +17,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          # Install Flet and all backend libraries used in main.py
           pip install flet pandas openpyxl fpdf supabase httpx postgrest
 
       - name: Setup Flutter
@@ -26,14 +27,15 @@ jobs:
 
       - name: Build Android APK
         run: |
+          # The 'y' answers the license prompt. 
+          # Use space-separated permission keywords to avoid "unrecognized arguments" error.
           echo "y" | flet build apk \
             --project-name "briks" \
-            --permissions camera storage \
-            --android-permissions android.permission.INTERNET=true android.permission.MANAGE_EXTERNAL_STORAGE=true \
+            --permissions internet camera storage manage_external_storage \
             --include-packages supabase pandas fpdf openpyxl httpx postgrest
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: briks-app
+          name: briks-mobile-app
           path: build/apk/*.apk
