@@ -51,6 +51,9 @@ def main(page: ft.Page):
     try:
         page.title = "BRIKS BY OKBA - Service maintenance"
         
+        # ADDED: This line intercepts the Flet red screen of death and hides it so UI updates still work!
+        page.on_error = lambda e: print(f"Ignored Flet UI Error: {e.data}")
+        
         # --- PERMISSIONS SETUP (FIXED) ---
         # Using a safer way to request permissions that avoids the 'no attribute' error
         def request_android_permissions():
@@ -134,19 +137,28 @@ def main(page: ft.Page):
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
                 
                 def login(e):
-                    res = supabase.table("users") \
-                        .select("*") \
-                        .eq("username", u_in.value.lower()) \
-                        .eq("password", p_in.value) \
-                        .execute()
-                    
-                    if res.data:
-                        page.logged_in = True
-                        page.u_id = u_in.value.lower()
-                        page.display_name = res.data[0].get('full_name', u_in.value)
-                        page.view = "HOME"
-                        refresh()
-                    else:
+                    # ADDED: A try-except block here to catch silent Supabase failures
+                    try:
+                        res = supabase.table("users") \
+                            .select("*") \
+                            .eq("username", u_in.value.lower()) \
+                            .eq("password", p_in.value) \
+                            .execute()
+                        
+                        if res.data:
+                            page.logged_in = True
+                            page.u_id = u_in.value.lower()
+                            page.display_name = res.data[0].get('full_name', u_in.value)
+                            page.view = "HOME"
+                            refresh()
+                        else:
+                            # ADDED: Better error text to warn you about Supabase RLS policies
+                            login_error.value = "Identifiants incorrects ou bloqués par Supabase RLS."
+                            login_error.visible = True
+                            page.update()
+                    except Exception as ex:
+                        # ADDED: Display actual connection errors on screen
+                        login_error.value = f"Erreur de connexion: {str(ex)}"
                         login_error.visible = True
                         page.update()
 
