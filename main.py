@@ -136,7 +136,17 @@ def main(page: ft.Page):
                 p_in = ft.TextField(label="Mot de passe", password=True, width=300)
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
                 
+                # --- ADDED: UI elements for loading state ---
+                login_btn = ft.ElevatedButton("ENTRER", width=300, bgcolor="red900")
+                loading_ring = ft.ProgressRing(visible=False, color="red")
+                
                 def login(e):
+                    # --- ADDED: Show loading state ---
+                    login_btn.disabled = True
+                    loading_ring.visible = True
+                    login_error.visible = False
+                    page.update()
+                    
                     # ADDED: A try-except block here to catch silent Supabase failures
                     try:
                         res = supabase.table("users") \
@@ -155,12 +165,19 @@ def main(page: ft.Page):
                             # ADDED: Better error text to warn you about Supabase RLS policies
                             login_error.value = "Identifiants incorrects ou bloqués par Supabase RLS."
                             login_error.visible = True
-                            page.update()
                     except Exception as ex:
                         # ADDED: Display actual connection errors on screen
                         login_error.value = f"Erreur de connexion: {str(ex)}"
                         login_error.visible = True
-                        page.update()
+                    finally:
+                        # --- ADDED: Hide loading state if we are still on the login page ---
+                        if page.view == "LOGIN":
+                            login_btn.disabled = False
+                            loading_ring.visible = False
+                            page.update()
+                
+                # Attach the click event to our button
+                login_btn.on_click = login
 
                 # FIXED: Added expand=True and a Container wrapper to properly center without the red overlap
                 page.add(
@@ -170,11 +187,12 @@ def main(page: ft.Page):
                             header_brand, 
                             u_in, p_in,
                             login_error,
-                            ft.ElevatedButton("ENTRER", on_click=login, width=300, bgcolor="red900"),
+                            loading_ring, # ADDED: The progress ring
+                            login_btn,    # ADDED: The modified login button
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
                         ], horizontal_alignment="center"),
-                        alignment=ft.alignment.center,
+                        alignment=ft.Alignment(0, 0), # FIXED: Changed from ft.alignment.center to ft.Alignment(0, 0) to avoid the Android AttributeError
                         expand=True
                     )
                 )
