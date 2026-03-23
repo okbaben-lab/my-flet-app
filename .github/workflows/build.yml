@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 1️⃣ Core compilation tools to prevent the "LT_SYS_SYMBOL_USCORE" crash
+      # 1️⃣ Core compilation tools 
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -33,18 +33,19 @@ jobs:
       # 2️⃣ Standard Flet dependencies
       - name: Install Python Dependencies
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install flet supabase pandas openpyxl fpdf2
 
-      # 3️⃣ The Build command with your permissions
+      # 3️⃣ The Build command with the "Auto-Yes" fix
       - name: Build Android APK
         run: |
-          flet build apk \
+          # The 'echo "y" |' part answers the license prompts automatically
+          echo "y" | flet build apk \
             --project "briks" \
             --product "briks" \
             --android-permissions "INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE"
 
-      # 4️⃣ Save the APK so you can download it
+      # 4️⃣ Save the APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
