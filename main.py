@@ -118,15 +118,15 @@ def main(page: ft.Page):
 
         file_picker = ft.FilePicker()
         file_picker.on_result = on_file_result
-        page.overlay.append(file_picker)
-        page.update() 
+        # FIXED: Removed page.overlay.append(file_picker) from startup sequence.
+        # It is now added safely only when a photo button is clicked below to prevent the startup crash.
 
         footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
 
         header_brand = ft.Column([
             ft.Text("BRIKS BY OKBA", size=32, weight="bold", color="red"),
             ft.Text("SERVICE MAINTENANCE", size=12, color="red", italic=True),
-        ], spacing=0, horizontal_alignment="center")
+        ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
 
         def refresh():
             page.controls.clear()
@@ -191,7 +191,7 @@ def main(page: ft.Page):
                             login_btn,    # ADDED: The modified login button
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
-                        ], horizontal_alignment="center"),
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), # FIXED Alignment
                         alignment=ft.Alignment(0, 0), # FIXED: Changed from ft.alignment.center to ft.Alignment(0, 0) to avoid the Android AttributeError
                         expand=True
                     )
@@ -233,7 +233,7 @@ def main(page: ft.Page):
                         ft.ElevatedButton("S'INSCRIRE", on_click=register, width=300, bgcolor="blue900"),
                         ft.TextButton("Retour à la connexion", on_click=lambda _: ch_v("LOGIN")),
                         footer_tag
-                    ], horizontal_alignment="center")
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
                 )
 
             elif page.view == "HOME":
@@ -244,7 +244,7 @@ def main(page: ft.Page):
                             ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
                         ], spacing=0),
                         ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
-                    ], alignment="spaceBetween"),
+                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), # FIXED Alignment
                     ft.Text(f"Opérateur: {page.display_name}", italic=True, color="grey"),
                     ft.Divider(color="red"),
                     ft.Column([
@@ -260,7 +260,7 @@ def main(page: ft.Page):
                                          on_click=lambda _: ch_v("MOLD"), width=350, height=55),
                         ft.ElevatedButton("CHECKS QUOTIDIENS / HEBDO", icon=ft.icons.CHECKLIST,
                                          on_click=lambda _: ch_v("ROUTINE"), width=350, height=55, bgcolor="green900"),
-                    ], horizontal_alignment="center", spacing=15),
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), # FIXED Alignment
                     ft.Divider(),
                     footer_tag
                 )
@@ -305,11 +305,19 @@ def main(page: ft.Page):
                     page.photo_part_path = ""
                     ch_v("HOME")
 
+                # FIXED: Deferred initialization of FilePicker wrapper for Parts
+                def pick_part_img(e):
+                    page.current_upload_target = "PART"
+                    if file_picker not in page.overlay:
+                        page.overlay.append(file_picker)
+                        page.update()
+                    file_picker.pick_files()
+
                 page.add(
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("DEMANDE DE PIÈCE DE RECHANGE", weight="bold", color="orange"),
                     p_mach, p_name, p_qty, p_urg,
-                    ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.icons.CAMERA_ALT, on_click=lambda _: (setattr(page, "current_upload_target", "PART"), file_picker.pick_files())),
+                    ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.icons.CAMERA_ALT, on_click=pick_part_img),
                     ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=350),
                     ft.ElevatedButton("HISTORIQUE DEMANDES", icon=ft.icons.LIST_ALT, on_click=lambda _: ch_v("PART_HISTORY"), width=350),
                     footer_tag
@@ -347,7 +355,7 @@ def main(page: ft.Page):
                             trailing=ft.Column([
                                 ft.Text(f"Qté: {i['stock_qty']}", color="red" if is_low else "white", size=16, weight="bold"),
                                 ft.Text("ALERTE" if is_low else "", color="red", size=10)
-                            ], alignment="center"),
+                            ], alignment=ft.MainAxisAlignment.CENTER), # FIXED Alignment
                             on_click=lambda e, item=i: open_stock_dialog(item)
                         ))
                     page.update()
@@ -485,8 +493,12 @@ def main(page: ft.Page):
                 err_desc = ft.TextField(label="Identification de l'Erreur", multiline=True, expand=True)
                 sol_desc = ft.TextField(label="Solution Apportée", multiline=True, expand=True)
                 
+                # FIXED: Deferred initialization of FilePicker wrapper
                 def pick_img(target):
                     page.current_upload_target = target
+                    if file_picker not in page.overlay:
+                        page.overlay.append(file_picker)
+                        page.update()
                     file_picker.pick_files()
 
                 def save_i(e):
