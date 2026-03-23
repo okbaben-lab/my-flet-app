@@ -36,14 +36,17 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install flet supabase pandas openpyxl fpdf2
 
-      # 3️⃣ The Build command with the "Auto-Yes" fix
+      # 3️⃣ The Build command with the correct permissions format
       - name: Build Android APK
         run: |
           # The 'echo "y" |' part answers the license prompts automatically
           echo "y" | flet build apk \
             --project "briks" \
             --product "briks" \
-            --android-permissions "INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE"
+            --android-permissions android.permission.INTERNET=true \
+            --android-permissions android.permission.READ_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.WRITE_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.MANAGE_EXTERNAL_STORAGE=true
 
       # 4️⃣ Save the APK
       - name: Upload APK
