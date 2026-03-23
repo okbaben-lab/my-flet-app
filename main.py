@@ -11,12 +11,12 @@ from supabase import create_client, Client
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
-SUPABASE_KEY = "lbaquqyzbippicbvmcxr"
+SUPABASE_KEY = "lbaquqyzbippicbvmcxr" # IMPORTANT: Make sure this is your 'anon public' key starting with eyJ...
 
 # SHIELD: Wrapped in try-except to prevent global crash if network is slow on app boot
 try:
-    # Note: Using the key provided in your create_client call
-    supabase: Client = create_client(SUPABASE_URL, "sb_publishable_qIs62pb-XO17gSwhXubVqg_2ffU7MOl")
+    # FIXED: Now strictly using the SUPABASE_KEY variable so it matches your config
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
     supabase = None
     print(f"Supabase init error: {e}")
@@ -132,12 +132,13 @@ def main(page: ft.Page):
             page.controls.clear()
             
             if not page.logged_in and page.view == "LOGIN":
-                u_in = ft.TextField(label="Utilisateur", width=300)
-                p_in = ft.TextField(label="Mot de passe", password=True, width=300)
+                # FIXED: Changed 300 to 320 to fit Android nicely
+                u_in = ft.TextField(label="Utilisateur", width=320)
+                p_in = ft.TextField(label="Mot de passe", password=True, width=320)
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
                 
                 # --- ADDED: UI elements for loading state ---
-                login_btn = ft.ElevatedButton("ENTRER", width=300, bgcolor="red900")
+                login_btn = ft.ElevatedButton("ENTRER", width=320, bgcolor="red900")
                 loading_ring = ft.ProgressRing(visible=False, color="red")
                 
                 def login(e):
@@ -179,7 +180,7 @@ def main(page: ft.Page):
                 # Attach the click event to our button
                 login_btn.on_click = login
 
-                # FIXED: Added expand=True and a Container wrapper to properly center without the red overlap
+                # FIXED: Alignment to top_center to avoid Android keyboard completely hiding UI
                 page.add(
                     ft.Container(
                         content=ft.Column([
@@ -192,15 +193,17 @@ def main(page: ft.Page):
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), # FIXED Alignment
-                        alignment=ft.Alignment(0, 0), # FIXED: Changed from ft.alignment.center to ft.Alignment(0, 0) to avoid the Android AttributeError
+                        alignment=ft.alignment.top_center, # FIXED: Avoid keyboard crush
+                        padding=20, # FIXED: Prevent elements from touching screen edges
                         expand=True
                     )
                 )
 
             elif page.view == "SIGNUP":
-                new_user = ft.TextField(label="Nom d'utilisateur (Login)", width=300)
-                new_full = ft.TextField(label="Nom complet (Affichage)", width=300)
-                new_pass = ft.TextField(label="Mot de passe", password=True, width=300)
+                # FIXED: Changed 300 to 320 to fit Android nicely
+                new_user = ft.TextField(label="Nom d'utilisateur (Login)", width=320)
+                new_full = ft.TextField(label="Nom complet (Affichage)", width=320)
+                new_pass = ft.TextField(label="Mot de passe", password=True, width=320)
                 
                 def register(e):
                     if not new_user.value or not new_pass.value:
@@ -230,7 +233,7 @@ def main(page: ft.Page):
                         header_brand,
                         ft.Text("CRÉER UN COMPTE", weight="bold", size=20),
                         new_user, new_full, new_pass,
-                        ft.ElevatedButton("S'INSCRIRE", on_click=register, width=300, bgcolor="blue900"),
+                        ft.ElevatedButton("S'INSCRIRE", on_click=register, width=320, bgcolor="blue900"),
                         ft.TextButton("Retour à la connexion", on_click=lambda _: ch_v("LOGIN")),
                         footer_tag
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
@@ -247,19 +250,20 @@ def main(page: ft.Page):
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), # FIXED Alignment
                     ft.Text(f"Opérateur: {page.display_name}", italic=True, color="grey"),
                     ft.Divider(color="red"),
+                    # FIXED: Changed width 350 to 320 on all buttons to prevent clipping off screen
                     ft.Column([
                         ft.ElevatedButton("INTERVENTION TECHNIQUE", icon=ft.icons.BUILD_CIRCLE,
-                                         on_click=lambda _: ch_v("INTER"), width=350, height=55, bgcolor="blue900"),
+                                         on_click=lambda _: ch_v("INTER"), width=320, height=55, bgcolor="blue900"),
                         ft.ElevatedButton("DEMANDE PIÈCE DE RECHANGE", icon=ft.icons.SHOPPING_CART,
-                                         on_click=lambda _: ch_v("PART_REQ"), width=350, height=55, bgcolor="orange900"),
+                                         on_click=lambda _: ch_v("PART_REQ"), width=320, height=55, bgcolor="orange900"),
                         ft.ElevatedButton("GESTION STOCK (INVENTORY)", icon=ft.icons.INVENTORY,
-                                         on_click=lambda _: ch_v("STOCK_MGR"), width=350, height=55, bgcolor="teal900"),
+                                         on_click=lambda _: ch_v("STOCK_MGR"), width=320, height=55, bgcolor="teal900"),
                         ft.ElevatedButton("HISTORIQUE DES RAPPORTS", icon=ft.icons.HISTORY,
-                                         on_click=lambda _: ch_v("HISTORY"), width=350, height=55),
+                                         on_click=lambda _: ch_v("HISTORY"), width=320, height=55),
                         ft.ElevatedButton("TRACKING MOULES", icon=ft.icons.RECYCLING,
-                                         on_click=lambda _: ch_v("MOLD"), width=350, height=55),
+                                         on_click=lambda _: ch_v("MOLD"), width=320, height=55),
                         ft.ElevatedButton("CHECKS QUOTIDIENS / HEBDO", icon=ft.icons.CHECKLIST,
-                                         on_click=lambda _: ch_v("ROUTINE"), width=350, height=55, bgcolor="green900"),
+                                         on_click=lambda _: ch_v("ROUTINE"), width=320, height=55, bgcolor="green900"),
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), # FIXED Alignment
                     ft.Divider(),
                     footer_tag
@@ -318,14 +322,15 @@ def main(page: ft.Page):
                     ft.Text("DEMANDE DE PIÈCE DE RECHANGE", weight="bold", color="orange"),
                     p_mach, p_name, p_qty, p_urg,
                     ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.icons.CAMERA_ALT, on_click=pick_part_img),
-                    ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=350),
-                    ft.ElevatedButton("HISTORIQUE DEMANDES", icon=ft.icons.LIST_ALT, on_click=lambda _: ch_v("PART_HISTORY"), width=350),
+                    ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=320), # FIXED Width
+                    ft.ElevatedButton("HISTORIQUE DEMANDES", icon=ft.icons.LIST_ALT, on_click=lambda _: ch_v("PART_HISTORY"), width=320), # FIXED Width
                     footer_tag
                 )
 
             elif page.view == "PART_HISTORY":
                 reqs = supabase.table("part_requests").select("*").order("id", desc=True).execute().data
-                lv = ft.ListView(expand=True, spacing=10, height=500)
+                # FIXED: Removed height=500 to allow expand=True to work smoothly on mobile
+                lv = ft.ListView(expand=True, spacing=10, height=None) 
                 for r in reqs:
                     lv.controls.append(ft.Container(content=ft.Column([
                         ft.Text(f"REF: PR-2026-{r['id']} | {r['piece_nom']}", weight="bold"),
@@ -399,7 +404,8 @@ def main(page: ft.Page):
                                              actions=[ft.ElevatedButton("Ajouter", on_click=save_new)])
                     page.dialog = add_dlg; add_dlg.open = True; page.update()
 
-                stock_lv = ft.ListView(expand=True, spacing=5, height=400)
+                # FIXED: Removed height=400 to allow expand=True to work smoothly
+                stock_lv = ft.ListView(expand=True, spacing=5, height=None) 
                 search_stock = ft.TextField(label="Chercher une pièce...", prefix_icon=ft.icons.SEARCH, on_change=lambda e: build_stock_list(e.control.value))
                 
                 page.add(
@@ -436,7 +442,7 @@ def main(page: ft.Page):
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("CHECK QUOTIDIEN", weight="bold"),
                     m_dd, c_grease, c_oil, c_elec, c_sec, dur_in,
-                    ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=350),
+                    ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=320), # FIXED Width
                     ft.Row([
                         ft.ElevatedButton("HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("ROUTINE_HISTORY")),
                         ft.ElevatedButton("RAPPORT HEBDO (PDF)", icon=ft.icons.SUMMARIZE, on_click=generate_weekly_pdf, bgcolor="blue900")
@@ -446,7 +452,8 @@ def main(page: ft.Page):
 
             elif page.view == "ROUTINE_HISTORY":
                 rows = supabase.table("routines").select("*").order("id", desc=True).execute().data
-                lv = ft.ListView(expand=True, height=500)
+                # FIXED: Removed height=500
+                lv = ft.ListView(expand=True, height=None) 
                 for r in rows:
                     lv.controls.append(ft.Container(
                         content=ft.Column([
@@ -535,12 +542,13 @@ def main(page: ft.Page):
                     ft.Row([err_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("ERR"), icon_color="red")]),
                     ft.Row([sol_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("SOL"), icon_color="green")]),
                     piec, spare_price_in,
-                    ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=350),
+                    ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=320), # FIXED Width
                     footer_tag
                 )
 
             elif page.view == "HISTORY":
-                lv = ft.ListView(expand=True, spacing=10, height=500)
+                # FIXED: Removed height=500
+                lv = ft.ListView(expand=True, spacing=10, height=None) 
                 
                 def build_history(search_term=""):
                     lv.controls.clear()
@@ -562,7 +570,7 @@ def main(page: ft.Page):
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("HISTORIQUE DES INTERVENTIONS", size=20, weight="bold"),
                     search_bar,
-                    ft.ElevatedButton("EXPORTER EXCEL (INTERVENTIONS)", icon=ft.icons.TABLE_CHART, on_click=export_excel, width=350),
+                    ft.ElevatedButton("EXPORTER EXCEL (INTERVENTIONS)", icon=ft.icons.TABLE_CHART, on_click=export_excel, width=320), # FIXED Width
                     lv,
                     footer_tag)
 
@@ -586,14 +594,15 @@ def main(page: ft.Page):
                 page.add(
                     ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                     ft.Text("CHANGEMENT MOULE (SMED)", weight="bold"), p_dd, o_m, n_m,
-                    ft.ElevatedButton("VALIDER", on_click=save_m, width=350),
-                    ft.ElevatedButton("VOIR HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("MOLD_HISTORY"), width=350, bgcolor="blue900"),
-                    ft.ElevatedButton("EXPORTER EXCEL (MOULES)", icon=ft.icons.TABLE_CHART, on_click=export_molds_excel, width=350, bgcolor="green700"),
+                    ft.ElevatedButton("VALIDER", on_click=save_m, width=320), # FIXED Width
+                    ft.ElevatedButton("VOIR HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("MOLD_HISTORY"), width=320, bgcolor="blue900"), # FIXED Width
+                    ft.ElevatedButton("EXPORTER EXCEL (MOULES)", icon=ft.icons.TABLE_CHART, on_click=export_molds_excel, width=320, bgcolor="green700"), # FIXED Width
                     footer_tag)
 
             elif page.view == "MOLD_HISTORY":
                 m_reports = supabase.table("molds").select("*").order("id", desc=True).execute().data
-                lv = ft.ListView(expand=True, spacing=10, height=500)
+                # FIXED: Removed height=500
+                lv = ft.ListView(expand=True, spacing=10, height=None) 
                 for r in m_reports:
                     lv.controls.append(ft.Container(content=ft.Column([
                         ft.Row([ft.Text(f"{r['dt']} - {r['p_no']}", weight="bold")]),
