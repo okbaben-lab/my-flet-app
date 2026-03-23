@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Flet and Dependencies
+      - name: Install Dependencies
         run: |
           pip install flet pandas openpyxl fpdf supabase httpx postgrest
 
@@ -28,7 +28,8 @@ jobs:
         run: |
           echo "y" | flet build apk \
             --project-name "briks" \
-            --permissions internet camera storage manage_external_storage \
+            --permissions camera storage \
+            --android-permissions android.permission.INTERNET=true android.permission.MANAGE_EXTERNAL_STORAGE=true \
             --include-packages supabase pandas fpdf openpyxl httpx postgrest
 
       - name: Upload APK
@@ -36,4 +37,3 @@ jobs:
         with:
           name: briks-app
           path: build/apk/*.apk
-          
