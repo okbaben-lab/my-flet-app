@@ -2,8 +2,9 @@ name: Build Briks APK
 
 on:
   push:
-    branches: [ main ]
-  pull_request: [ main ]
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   build:
@@ -18,7 +19,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 1️⃣ Fix the "Final Boss" crash by installing these specific tools
+      # 1️⃣ Core compilation tools to prevent the "LT_SYS_SYMBOL_USCORE" crash
       - name: Install System Dependencies
         run: |
           sudo apt-get update
@@ -29,22 +30,21 @@ jobs:
             libncursesw5-dev libtinfo-dev libffi-dev \
             libssl-dev cmake gettext m4 autopoint
 
-      # 2️⃣ Install Flet and your project requirements
+      # 2️⃣ Standard Flet dependencies
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet supabase pandas  # Add any other libs your app uses here
+          pip install flet supabase pandas openpyxl fpdf2
 
-      # 3️⃣ Run the Flet Build with Permissions
+      # 3️⃣ The Build command with your permissions
       - name: Build Android APK
         run: |
-          # Use the --android-permissions flag to add what you need
           flet build apk \
             --project "briks" \
             --product "briks" \
             --android-permissions "INTERNET,READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,MANAGE_EXTERNAL_STORAGE"
 
-      # 4️⃣ Save the result
+      # 4️⃣ Save the APK so you can download it
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
