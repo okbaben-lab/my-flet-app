@@ -17,6 +17,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          # Installing all libraries used in your main.py
           pip install flet pandas openpyxl fpdf supabase httpx postgrest
 
       - name: Setup Flutter
@@ -26,11 +27,12 @@ jobs:
 
       - name: Build Android APK
         run: |
-          # We separate 'camera' (which is a choice) from the manual android permissions
+          # 1. 'camera' stays in --permissions (it is a valid choice)
+          # 2. Internet and Storage move to --android-permissions
           echo "y" | flet build apk \
             --project-name "briks" \
             --permissions camera \
-            --android-permissions android.permission.INTERNET=true android.permission.MANAGE_EXTERNAL_STORAGE=true \
+            --android-permissions android.permission.INTERNET=true android.permission.MANAGE_EXTERNAL_STORAGE=true android.permission.READ_EXTERNAL_STORAGE=true android.permission.WRITE_EXTERNAL_STORAGE=true \
             --include-packages supabase pandas fpdf openpyxl httpx postgrest
 
       - name: Upload APK
@@ -38,4 +40,3 @@ jobs:
         with:
           name: briks-app
           path: build/apk/*.apk
-          
