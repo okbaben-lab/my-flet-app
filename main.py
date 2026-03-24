@@ -4,10 +4,11 @@ import os
 import shutil
 import urllib.request # Added to fetch images for the PDF fix
 import tempfile # ARDED: Crucial for Android file writing permissions
-import pandas as pd # MOVED TO TOP: Required for APK builder
 from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
 from supabase import create_client, Client
+from openpyxl import Workbook
+import os
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
@@ -59,6 +60,14 @@ def main(page: ft.Page):
         def request_android_permissions():
             try:
                 # Standard Flet mobile permission check
+                # Updated to ensure we hit the built-in permission handler directly
+                ph = ft.PermissionHandler()
+                page.overlay.append(ph)
+                page.update()
+                ph.request_permission(ft.PermissionType.STORAGE)
+                ph.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
+                ph.request_permission(ft.PermissionType.CAMERA)
+                
                 if hasattr(page, "permission_handler"):
                     page.permission_handler.request_permission(ft.PermissionType.STORAGE)
                     page.permission_handler.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
@@ -614,40 +623,76 @@ def main(page: ft.Page):
 
         def export_routines_excel(e=None):
             data = supabase.table("routines").select("*").execute().data
-            df = pd.DataFrame(data)
+            # df = pd.DataFrame(data)
             base_name = f"Briks_By_Okba_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
-            df.to_excel(filename, index=False)
+            # df.to_excel(filename, index=False)
+            
+            # --- OPENPYXL REPLACEMENT (No Pandas) ---
+            wb = Workbook(); ws = wb.active; ws.title = "Inspections"
+            if data:
+                headers = list(data[0].keys()); ws.append(headers)
+                for item in data: ws.append([item.get(h, "") for h in headers])
+            wb.save(filename)
+            # ----------------------------------------
+            
             page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {base_name}"))
             page.snack_bar.open = True
             page.update()
         
         def export_excel(e=None):
             data = supabase.table("inters").select("*").execute().data
-            df = pd.DataFrame(data)
+            # df = pd.DataFrame(data)
             base_name = f"Briks_By_Okba_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
-            df.to_excel(filename, index=False)
+            # df.to_excel(filename, index=False)
+
+            # --- OPENPYXL REPLACEMENT (No Pandas) ---
+            wb = Workbook(); ws = wb.active; ws.title = "Interventions"
+            if data:
+                headers = list(data[0].keys()); ws.append(headers)
+                for item in data: ws.append([item.get(h, "") for h in headers])
+            wb.save(filename)
+            # ----------------------------------------
+
             page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
             page.snack_bar.open = True
             page.update()
 
         def export_molds_excel(e=None):
             data = supabase.table("molds").select("*").execute().data
-            df = pd.DataFrame(data)
+            # df = pd.DataFrame(data)
             base_name = f"Briks_By_Okba_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
-            df.to_excel(filename, index=False)
+            # df.to_excel(filename, index=False)
+
+            # --- OPENPYXL REPLACEMENT (No Pandas) ---
+            wb = Workbook(); ws = wb.active; ws.title = "Moules"
+            if data:
+                headers = list(data[0].keys()); ws.append(headers)
+                for item in data: ws.append([item.get(h, "") for h in headers])
+            wb.save(filename)
+            # ----------------------------------------
+
             page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
             page.snack_bar.open = True
             page.update()
 
         def export_inventory_excel(e=None):
             data = supabase.table("inventory").select("*").execute().data
-            df = pd.DataFrame(data)
+            # df = pd.DataFrame(data)
             base_name = f"Briks_By_Okba_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filename = os.path.join(tempfile.gettempdir(), base_name)
-            df.to_excel(filename, index=False)
+            # df.to_excel(filename, index=False)
+
+            # --- OPENPYXL REPLACEMENT (No Pandas) ---
+            wb = Workbook(); ws = wb.active; ws.title = "Stock"
+            if data:
+                headers = list(data[0].keys()); ws.append(headers)
+                for item in data: ws.append([item.get(h, "") for h in headers])
+            wb.save(filename)
+            # ----------------------------------------
+
             page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {base_name}"))
             page.snack_bar.open = True
             page.update()
