@@ -59,8 +59,7 @@ jobs:
             --product "briks" \
             --permissions camera \
             --android-permissions android.permission.INTERNET android.permission.READ_EXTERNAL_STORAGE android.permission.WRITE_EXTERNAL_STORAGE android.permission.MANAGE_EXTERNAL_STORAGE \
-            --include-packages supabase pandas fpdf2 openpyxl httpx postgrest
-
+            
       # 5️⃣ Save the APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
