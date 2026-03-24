@@ -11,7 +11,7 @@ from supabase import create_client, Client
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
-SUPABASE_KEY = "lbaquqyzbippicbvmcxr"
+SUPABASE_KEY = "sb_publishable_qIs62pb-XO17gSwhXubVqg_2ffU7MOl"
 
 # SHIELD: Wrapped in try-except to prevent global crash if network is slow on app boot
 try:
