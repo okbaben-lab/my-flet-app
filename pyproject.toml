@@ -1,6 +1,40 @@
-[tool.flet.android.permission]
+[project]
+name = "briks"
+version = "2.0.0"
+description = "Briks CMMS - Industrial Maintenance Management System"
+authors = [
+    {name = "Okba Bennaim"}
+]
+dependencies = [
+    "flet>=0.82.2",
+    "supabase",
+    "pandas",
+    "openpyxl",
+    "fpdf2",
+    "httpx",
+    "postgrest"
+]
+
+[tool.flet]
+# This defines the entry point of your Python application
+app-path = "main.py"
+
+[tool.flet.android]
+# Sets the display name on the phone's home screen
+product-name = "Briks By Okba"
+# Organized package name (reverse domain style)
+org = "com.briks.maintenance"
+
+[tool.flet.android.permissions]
+# Hardcoding these guarantees the GitHub builder bakes them into AndroidManifest.xml
 "android.permission.INTERNET" = true
 "android.permission.CAMERA" = true
 "android.permission.READ_EXTERNAL_STORAGE" = true
 "android.permission.WRITE_EXTERNAL_STORAGE" = true
 "android.permission.MANAGE_EXTERNAL_STORAGE" = true
+
+[tool.flet.desktop]
+# When you run it on Windows / PC, it uses this metadata
+product-name = "Briks CMMS Desktop"
+company-name = "Briks"
+copyright = "Copyright © 2026 Okba Bennaim"
