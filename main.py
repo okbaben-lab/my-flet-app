@@ -8,21 +8,18 @@ from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 from openpyxl import Workbook
-import os
+import pandas as pd
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
 SUPABASE_KEY = "sb_publishable_qIs62pb-XO17gSwhXubVqg_2ffU7MOl"
 
-# SHIELD: Wrapped in try-except to prevent global crash if network is slow on app boot
 try:
-    # Note: Using the publishable key provided in your original create_client call
-    supabase: Client = create_client(SUPABASE_URL, "sb_publishable_qIs62pb-XO17gSwhXubVqg_2ffU7MOl")
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
     supabase = None
     print(f"Supabase init error: {e}")
 
-# --- CONFIGURATION ---
 MACHINES = [
     "Presse 1", "Presse 2", "Presse 3", "Presse 4", "Presse 5", "Presse 6", 
     "Presse 7", "Presse 8", "Presse 9", "Presse 10", "Presse 11",
@@ -33,56 +30,45 @@ MACHINES = [
     "Aspirateur presse", "Aspirateur manuel 1", "Aspirateur manuel 2", "Moule"
 ]
 
-# --- DATABASE ENGINE (ADAPTED FOR SUPABASE) ---
 def setup_db():
     class SupabaseWrapper:
-        def execute(self, query, params=None):
-            pass
+        def execute(self, query, params=None): pass
         def commit(self): pass
         def cursor(self): return self
         def fetchone(self): return [1] 
-    
     return SupabaseWrapper()
 
 db_conn = setup_db()
 
-# --- MAIN APP ---
 def main(page: ft.Page):
-    # SHIELD: Catch any rendering errors so we don't get a black screen
     try:
         page.title = "BRIKS BY OKBA - Service maintenance"
         
-        # ADDED: This line intercepts the Flet red screen of death and hides it so UI updates still work!
-    def show_ui_error(e):
-      print(f"FLET UI ERROR:{e.data}")
-        
-        page.controls.clear()
-        page.add(
-            ft.Container(
-                content=ft.Column([
-                ft.Text("UI ERROR DETECTED", color="red", size=24, weight="bold"),
-                ft.Text(str(e.data), color="white"),
-            ]),
-            padding=20
-        )
-    )
-    page.update()
+        def show_ui_error(e):
+            print(f"FLET UI ERROR:{e.data}")
+            page.controls.clear()
+            page.add(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("UI ERROR DETECTED", color="red", size=24, weight="bold"),
+                        ft.Text(str(e.data), color="white"),
+                    ]),
+                    padding=20
+                )
+            )
+            page.update()
 
-page.on_error = show_ui_error
+        page.on_error = show_ui_error
         
-        # --- PERMISSIONS SETUP (FIXED) ---
-        # Using a safer way to request permissions that avoids the 'no attribute' error
         def request_android_permissions():
             try:
-                # Standard Flet mobile permission check
                 if hasattr(page, "permission_handler"):
                     page.permission_handler.request_permission(ft.PermissionType.STORAGE)
                     page.permission_handler.request_permission(ft.PermissionType.MANAGE_EXTERNAL_STORAGE)
-                # Alternative for newer Flet versions
                 elif hasattr(page, "request_permission"):
                     page.request_permission(ft.PermissionType.STORAGE)
             except:
-                pass # Silently skip if not on a mobile platform supporting this
+                pass
 
         request_android_permissions()
         
@@ -96,16 +82,14 @@ page.on_error = show_ui_error
         page.photo_part_path = "" 
         page.current_upload_target = ""
 
-        # Helper for Supabase Image Upload - UPDATED FOR UNIQUE NAMING
         def upload_to_supabase(local_path, folder):
             if not local_path or not os.path.exists(local_path):
                 return ""
             try:
-                # Generate a completely unique filename using user ID + timestamp with milliseconds
                 user_clean = page.u_id if hasattr(page, 'u_id') else "anon"
                 ts = datetime.now().strftime('%Y%m%d_%H%M%S_%f')
                 ext = os.path.splitext(local_path)[1]
-                if not ext: ext = ".jpg" # fallback extension
+                if not ext: ext = ".jpg"
                 
                 file_name = f"{folder}/{user_clean}_{ts}{ext}"
                 
@@ -134,15 +118,13 @@ page.on_error = show_ui_error
 
         file_picker = ft.FilePicker()
         file_picker.on_result = on_file_result
-        # FIXED: Removed page.overlay.append(file_picker) from startup sequence.
-        # It is now added safely only when a photo button is clicked below to prevent the startup crash.
 
         footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
 
         header_brand = ft.Column([
             ft.Text("BRIKS BY OKBA", size=32, weight="bold", color="red"),
             ft.Text("SERVICE MAINTENANCE", size=12, color="red", italic=True),
-        ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
+        ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
 
         def refresh():
             page.controls.clear()
@@ -152,24 +134,17 @@ page.on_error = show_ui_error
                 p_in = ft.TextField(label="Mot de passe", password=True, width=320)
                 login_error = ft.Text("Identifiants incorrects", color="red", visible=False)
                 
-                # --- ADDED: UI elements for loading state ---
                 login_btn = ft.ElevatedButton("ENTRER", width=320, bgcolor="red900")
                 loading_ring = ft.ProgressRing(visible=False, color="red")
                 
                 def login(e):
-                    # --- ADDED: Show loading state ---
                     login_btn.disabled = True
                     loading_ring.visible = True
                     login_error.visible = False
                     page.update()
                     
-                    # ADDED: A try-except block here to catch silent Supabase failures
                     try:
-                        res = supabase.table("users") \
-                            .select("*") \
-                            .eq("username", u_in.value.lower()) \
-                            .eq("password", p_in.value) \
-                            .execute()
+                        res = supabase.table("users").select("*").eq("username", u_in.value.lower()).eq("password", p_in.value).execute()
                         
                         if res.data:
                             page.logged_in = True
@@ -178,21 +153,17 @@ page.on_error = show_ui_error
                             page.view = "HOME"
                             refresh()
                         else:
-                            # ADDED: Better error text to warn you about Supabase RLS policies
                             login_error.value = "Identifiants incorrects ou bloqués par Supabase RLS."
                             login_error.visible = True
                     except Exception as ex:
-                        # ADDED: Display actual connection errors on screen
                         login_error.value = f"Erreur de connexion: {str(ex)}"
                         login_error.visible = True
                     finally:
-                        # --- ADDED: Hide loading state if we are still on the login page ---
                         if page.view == "LOGIN":
                             login_btn.disabled = False
                             loading_ring.visible = False
                             page.update()
                 
-                # Attach the click event to our button
                 login_btn.on_click = login
 
                 page.add(
@@ -202,13 +173,13 @@ page.on_error = show_ui_error
                             header_brand, 
                             u_in, p_in,
                             login_error,
-                            loading_ring, # ADDED: The progress ring
-                            login_btn,    # ADDED: The modified login button
+                            loading_ring,
+                            login_btn,
                             ft.TextButton("Créer un compte (Sign Up)", on_click=lambda _: ch_v("SIGNUP")),
                             footer_tag
-                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), # FIXED Alignment
-                        alignment=ft.Alignment(0, -1), # FIXED: Manual Coordinates to prevent Android crash and keyboard squeeze
-                        padding=20, # FIXED: Padding for mobile screens
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                        alignment=ft.Alignment(0, -1),
+                        padding=20,
                         expand=True
                     )
                 )
@@ -249,96 +220,49 @@ page.on_error = show_ui_error
                         ft.ElevatedButton("S'INSCRIRE", on_click=register, width=320, bgcolor="blue900"),
                         ft.TextButton("Retour à la connexion", on_click=lambda _: ch_v("LOGIN")),
                         footer_tag
-                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER) # FIXED Alignment
+                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER)
                 )
 
             elif page.view == "HOME":
-    safe_name = getattr(page, "display_name", "Utilisateur")
+                safe_name = getattr(page, "display_name", "Utilisateur")
 
-    page.add(
-        ft.Container(
-            content=ft.Column([
-                ft.Row([
-                    ft.Column([
-                        ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
-                        ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
-                    ], spacing=0, expand=True),
-                    ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
-                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                page.add(
+                    ft.Container(
+                        content=ft.Column([
+                            ft.Row([
+                                ft.Column([
+                                    ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
+                                    ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
+                                ], spacing=0, expand=True),
+                                ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
+                            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
 
-                ft.Text(f"Opérateur: {safe_name}", italic=True, color="grey"),
-                ft.Divider(color="red"),
+                            ft.Text(f"Opérateur: {safe_name}", italic=True, color="grey"),
+                            ft.Divider(color="red"),
 
-                ft.Column([
-                    ft.ElevatedButton(
-                        "INTERVENTION TECHNIQUE",
-                        icon=ft.icons.BUILD_CIRCLE,
-                        on_click=lambda _: ch_v("INTER"),
-                        width=320,
-                        height=55,
-                        bgcolor="blue900"
-                    ),
-                    ft.ElevatedButton(
-                        "DEMANDE PIÈCE DE RECHANGE",
-                        icon=ft.icons.SHOPPING_CART,
-                        on_click=lambda _: ch_v("PART_REQ"),
-                        width=320,
-                        height=55,
-                        bgcolor="orange900"
-                    ),
-                    ft.ElevatedButton(
-                        "GESTION STOCK (INVENTORY)",
-                        icon=ft.icons.INVENTORY,
-                        on_click=lambda _: ch_v("STOCK_MGR"),
-                        width=320,
-                        height=55,
-                        bgcolor="teal900"
-                    ),
-                    ft.ElevatedButton(
-                        "HISTORIQUE DES RAPPORTS",
-                        icon=ft.icons.HISTORY,
-                        on_click=lambda _: ch_v("HISTORY"),
-                        width=320,
-                        height=55
-                    ),
-                    ft.ElevatedButton(
-                        "TRACKING MOULES",
-                        icon=ft.icons.RECYCLING,
-                        on_click=lambda _: ch_v("MOLD"),
-                        width=320,
-                        height=55
-                    ),
-                    ft.ElevatedButton(
-                        "CHECKS QUOTIDIENS / HEBDO",
-                        icon=ft.icons.CHECKLIST,
-                        on_click=lambda _: ch_v("ROUTINE"),
-                        width=320,
-                        height=55,
-                        bgcolor="green900"
-                    ),
-                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15),
+                            ft.Column([
+                                ft.ElevatedButton("INTERVENTION TECHNIQUE", icon=ft.icons.BUILD_CIRCLE, on_click=lambda _: ch_v("INTER"), width=320, height=55, bgcolor="blue900"),
+                                ft.ElevatedButton("DEMANDE PIÈCE DE RECHANGE", icon=ft.icons.SHOPPING_CART, on_click=lambda _: ch_v("PART_REQ"), width=320, height=55, bgcolor="orange900"),
+                                ft.ElevatedButton("GESTION STOCK (INVENTORY)", icon=ft.icons.INVENTORY, on_click=lambda _: ch_v("STOCK_MGR"), width=320, height=55, bgcolor="teal900"),
+                                ft.ElevatedButton("HISTORIQUE DES RAPPORTS", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("HISTORY"), width=320, height=55),
+                                ft.ElevatedButton("TRACKING MOULES", icon=ft.icons.RECYCLING, on_click=lambda _: ch_v("MOLD"), width=320, height=55),
+                                ft.ElevatedButton("CHECKS QUOTIDIENS / HEBDO", icon=ft.icons.CHECKLIST, on_click=lambda _: ch_v("ROUTINE"), width=320, height=55, bgcolor="green900"),
+                            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15),
 
-                ft.Divider(),
-                footer_tag
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            scroll=ft.ScrollMode.AUTO
-            ),
-            padding=20,
-            expand=True
-        )
-)
+                            ft.Divider(),
+                            footer_tag
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, scroll=ft.ScrollMode.AUTO),
+                        padding=20,
+                        expand=True
+                    )
+                )
 
             elif page.view == "USER":
                 new_name = ft.TextField(label="Nouveau Nom d'affichage", value=page.display_name)
                 new_pw = ft.TextField(label="Nouveau Mot de passe", password=True)
                 
                 def update_profile(e):
-                    supabase.table("users").update({
-                        "full_name": new_name.value, 
-                        "password": new_pw.value
-                    }).eq("username", page.u_id).execute()
-                    
+                    supabase.table("users").update({"full_name": new_name.value, "password": new_pw.value}).eq("username", page.u_id).execute()
                     page.display_name = new_name.value
                     page.snack_bar = ft.SnackBar(ft.Text("Profil mis à jour !"))
                     page.snack_bar.open = True
@@ -369,7 +293,6 @@ page.on_error = show_ui_error
                     page.photo_part_path = ""
                     ch_v("HOME")
 
-                # FIXED: Deferred initialization of FilePicker wrapper for Parts
                 def pick_part_img(e):
                     page.current_upload_target = "PART"
                     if file_picker not in page.overlay:
@@ -419,7 +342,7 @@ page.on_error = show_ui_error
                             trailing=ft.Column([
                                 ft.Text(f"Qté: {i['stock_qty']}", color="red" if is_low else "white", size=16, weight="bold"),
                                 ft.Text("ALERTE" if is_low else "", color="red", size=10)
-                            ], alignment=ft.MainAxisAlignment.CENTER), # FIXED Alignment
+                            ], alignment=ft.MainAxisAlignment.CENTER),
                             on_click=lambda e, item=i: open_stock_dialog(item)
                         ))
                     page.update()
@@ -447,10 +370,10 @@ page.on_error = show_ui_error
                 def open_add_part(e):
                     r_f = ft.TextField(label="Référence")
                     d_f = ft.TextField(label="Désignation")
-                    c_f = ft.TextField(label="Catégorie (Electrique, Meca, etc.)")
+                    c_f = ft.TextField(label="Catégorie")
                     q_f = ft.TextField(label="Stock Initial", value="0")
-                    m_f = ft.TextField(label="Stock Minimum (Alerte)", value="1")
-                    l_f = ft.TextField(label="Emplacement (Rayon/Box)")
+                    m_f = ft.TextField(label="Stock Minimum", value="1")
+                    l_f = ft.TextField(label="Emplacement")
                     
                     def save_new(e):
                         supabase.table("inventory").insert({
@@ -459,8 +382,7 @@ page.on_error = show_ui_error
                         }).execute()
                         add_dlg.open = False; build_stock_list()
 
-                    add_dlg = ft.AlertDialog(title=ft.Text("Nouvelle Pièce"), content=ft.Column([r_f, d_f, c_f, q_f, m_f, l_f], scroll="auto"),
-                                             actions=[ft.ElevatedButton("Ajouter", on_click=save_new)])
+                    add_dlg = ft.AlertDialog(title=ft.Text("Nouvelle Pièce"), content=ft.Column([r_f, d_f, c_f, q_f, m_f, l_f], scroll="auto"), actions=[ft.ElevatedButton("Ajouter", on_click=save_new)])
                     page.dialog = add_dlg; add_dlg.open = True; page.update()
 
                 stock_lv = ft.ListView(expand=True, spacing=5, height=None)
@@ -481,10 +403,10 @@ page.on_error = show_ui_error
 
             elif page.view == "ROUTINE":
                 m_dd = ft.Dropdown(label="Machine", options=[ft.dropdown.Option(m) for m in MACHINES])
-                c_grease = ft.Checkbox(label="Graissage (Greasing)")
-                c_oil = ft.Checkbox(label="Huilage (Oiling)")
-                c_elec = ft.Checkbox(label="Serrage composants électriques")
-                c_sec = ft.Checkbox(label="Test systèmes de sécurité")
+                c_grease = ft.Checkbox(label="Graissage")
+                c_oil = ft.Checkbox(label="Huilage")
+                c_elec = ft.Checkbox(label="Serrage électriques")
+                c_sec = ft.Checkbox(label="Test sécurité")
                 dur_in = ft.TextField(label="Temps passé (Minutes)", keyboard_type="number")
                 
                 def save_r(e):
@@ -534,30 +456,21 @@ page.on_error = show_ui_error
                     mold_ref_field.visible = (sys_dd.value == "Moule")
                     page.update()
 
-                sys_dd = ft.Dropdown(label="Machine / Système", 
-                                   options=[ft.dropdown.Option(m) for m in MACHINES],
-                                   on_change=on_sys_change)
-                
+                sys_dd = ft.Dropdown(label="Machine / Système", options=[ft.dropdown.Option(m) for m in MACHINES], on_change=on_sys_change)
                 s_ens = ft.TextField(label="Sous-Ensemble")
                 m_type = ft.Dropdown(label="Type Maintenance", options=[ft.dropdown.Option("Corrective"), ft.dropdown.Option("Préventive")])
-                piec = ft.TextField(label="Pièces de rechange (Saisir nom exact pour déstockage automatique)")
-                spare_price_in = ft.TextField(label="Coût Total des Pièces (DZD)", keyboard_type="number", value="0")
+                piec = ft.TextField(label="Pièces de rechange")
+                spare_price_in = ft.TextField(label="Coût Total Pièces (DZD)", keyboard_type="number", value="0")
                 
                 error_other_desc = ft.TextField(label="Précisez le type d'erreur", visible=False)
                 def on_source_change(e):
                     error_other_desc.visible = (error_source.value == "Autre")
                     page.update()
 
-                error_source = ft.Dropdown(
-                    label="Source de l'erreur",
-                    options=[ft.dropdown.Option("Opérateur"), ft.dropdown.Option("Technique"), ft.dropdown.Option("Autre")],
-                    on_change=on_source_change
-                )
-
+                error_source = ft.Dropdown(label="Source de l'erreur", options=[ft.dropdown.Option("Opérateur"), ft.dropdown.Option("Technique"), ft.dropdown.Option("Autre")], on_change=on_source_change)
                 err_desc = ft.TextField(label="Identification de l'Erreur", multiline=True, expand=True)
                 sol_desc = ft.TextField(label="Solution Apportée", multiline=True, expand=True)
                 
-                # FIXED: Deferred initialization of FilePicker wrapper
                 def pick_img(target):
                     page.current_upload_target = target
                     if file_picker not in page.overlay:
@@ -572,10 +485,7 @@ page.on_error = show_ui_error
                             part = part_res.data[0]
                             new_stock = part['stock_qty'] - 1
                             supabase.table("inventory").update({"stock_qty": new_stock}).eq("id", part['id']).execute()
-                            supabase.table("inventory_logs").insert({
-                                "part_id": part['id'], "action": "Reserved for Maint.", 
-                                "qty": -1, "machine": sys_dd.value, "dt": datetime.now().strftime("%Y-%m-%d %H:%M")
-                            }).execute()
+                            supabase.table("inventory_logs").insert({"part_id": part['id'], "action": "Reserved for Maint.", "qty": -1, "machine": sys_dd.value, "dt": datetime.now().strftime("%Y-%m-%d %H:%M")}).execute()
 
                     final_err_img_url = upload_to_supabase(page.photo_err_path, "errors")
                     final_sol_img_url = upload_to_supabase(page.photo_sol_path, "solutions")
@@ -619,7 +529,7 @@ page.on_error = show_ui_error
                         ]), padding=10, border=ft.border.all(1, "grey700"), border_radius=10))
                     page.update()
 
-                search_bar = ft.TextField(label="Chercher par machine ou utilisateur", prefix_icon=ft.icons.SEARCH, on_change=lambda e: build_history(e.control.value))
+                search_bar = ft.TextField(label="Chercher par machine...", prefix_icon=ft.icons.SEARCH, on_change=lambda e: build_history(e.control.value))
                 build_history()
 
                 page.add(
@@ -641,10 +551,7 @@ page.on_error = show_ui_error
                 p_dd.on_change = on_p_change
                 
                 def save_m(e):
-                    supabase.table("molds").insert({
-                        "p_no": p_dd.value, "old_m": o_m.value, "new_m": n_m.value, 
-                        "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user": page.display_name
-                    }).execute()
+                    supabase.table("molds").insert({"p_no": p_dd.value, "old_m": o_m.value, "new_m": n_m.value, "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "user": page.display_name}).execute()
                     ch_v("HOME")
                     
                 page.add(
@@ -751,9 +658,8 @@ page.on_error = show_ui_error
             pdf = FPDF()
             pdf.add_page()
             
-            # Header 
             pdf.set_font("Arial", 'B', 22)
-            pdf.set_text_color(140, 0, 0) # Red
+            pdf.set_text_color(140, 0, 0)
             pdf.cell(190, 10, "BRIKS BY OKBA", ln=True, align='C')
             pdf.set_font("Arial", 'I', 10)
             pdf.cell(190, 6, "RAPPORT D'INTERVENTION TECHNIQUE", ln=True, align='C')
@@ -762,7 +668,6 @@ page.on_error = show_ui_error
             pdf.set_text_color(0, 0, 0)
             pdf.set_font("Arial", 'B', 9)
             
-            # Details Box
             pdf.cell(100, 8, f"Machine: {row.get('systeme', '')}", border=1)
             pdf.cell(90, 8, f"Date: {row.get('date', '')}", border=1, ln=True)
             pdf.cell(100, 8, f"Source de l'erreur: {row.get('error_source', '')}", border=1)
@@ -775,7 +680,6 @@ page.on_error = show_ui_error
                 pdf.cell(95, 8, title, border='LTR', ln=True)
                 pdf.set_font("Arial", '', 8)
                 
-                # Left side text box
                 pdf.multi_cell(95, 5, str(desc), border='LR')
                 current_y = pdf.get_y()
                 if current_y < y_start + 48:
@@ -783,7 +687,6 @@ page.on_error = show_ui_error
                 else:
                     pdf.cell(95, 0, "", border='T', ln=True)
                 
-                # Right side photo box
                 pdf.set_xy(110, y_start)
                 pdf.set_font("Arial", 'B', 9)
                 pdf.cell(80, 8, "PHOTO:", border=1, ln=True)
@@ -794,21 +697,15 @@ page.on_error = show_ui_error
                     try:
                         temp_img = os.path.join(tempfile.gettempdir(), f"temp_img_{os.urandom(4).hex()}.jpg")
                         urllib.request.urlretrieve(photo_url, temp_img)
-                        
                         pdf.image(temp_img, x=112, y=y_start + 10, w=76, h=36)
                         os.remove(temp_img)
-                    except Exception as e:
-                        print(f"Erreur de chargement d'image: {e}")
+                    except: pass
                 
                 return max(pdf.get_y(), y_start + 48) + 5
             
-            # 1. Erreur Section
             y_next = draw_section("1. IDENTIFICATION DE L'ERREUR:", row.get('error_desc', ''), row.get('photo_err', ''), pdf.get_y())
-            
-            # 2. Solution Section
             y_next = draw_section("2. SOLUTION APPORTEE:", row.get('solution_desc', ''), row.get('photo_sol', ''), y_next)
             
-            # Consommables Section
             pdf.set_xy(10, y_next)
             pdf.set_font("Arial", 'B', 9)
             pdf.cell(190, 8, "CONSOMMABLES & PIECES DE RECHANGE:", border=1, ln=True)
@@ -849,8 +746,7 @@ page.on_error = show_ui_error
                     urllib.request.urlretrieve(row['photo_path'], temp_img)
                     pdf.image(temp_img, x=10, y=pdf.get_y() + 10, w=100)
                     os.remove(temp_img)
-                except Exception as e:
-                    print(f"Erreur d'image pièce: {e}")
+                except: pass
             
             base_name = f"Demande_Piece_{row.get('id', 'N')}.pdf"
             fname = os.path.join(tempfile.gettempdir(), base_name)
@@ -863,7 +759,6 @@ page.on_error = show_ui_error
         refresh()
 
     except Exception as fatal_error:
-        # If the app crashes on launch, this will show the exact error in red text instead of a black screen.
         page.add(ft.Text(f"CRITICAL ERROR: {str(fatal_error)}", color="white", bgcolor="red", size=20, weight="bold"))
         page.update()
 
