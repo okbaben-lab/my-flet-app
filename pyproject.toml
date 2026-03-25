@@ -1,6 +1,6 @@
 [project]
 name = "briks"
-version = "2.0.1" # Bumped to force a fresh install
+version = "1.0.0" # Bumped to force a fresh install
 description = "Briks CMMS - Industrial Maintenance Management System"
 authors = [
     {name = "Okba"}
@@ -11,6 +11,7 @@ dependencies = [
     "openpyxl",
     "fpdf2",
     "httpx",
+    "pandas",
     "postgrest"
     # REMOVED pandas!
 ]
