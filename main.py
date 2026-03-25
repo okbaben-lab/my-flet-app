@@ -8,7 +8,6 @@ from fpdf import FPDF # MOVED TO TOP: Required for APK builder
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 from openpyxl import Workbook
-import pandas as pd
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
