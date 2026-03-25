@@ -54,7 +54,8 @@ def main(page: ft.Page):
         
         # ADDED: This line intercepts the Flet red screen of death and hides it so UI updates still work!
     def show_ui_error(e):
-        print(f"FLET UI ERROR: {e.data}")
+      print(f"FLET UI ERROR:{e.data}")
+        
         page.controls.clear()
         page.add(
             ft.Container(
