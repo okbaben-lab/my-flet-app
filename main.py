@@ -1,13 +1,11 @@
 import flet as ft
 import os
-import shutil
 import urllib.request
 import tempfile
 import pandas as pd
 from fpdf import FPDF
 from datetime import datetime, timedelta
 from supabase import create_client, Client
-from openpyxl import Workbook
 
 # --- SUPABASE CONFIGURATION ---
 SUPABASE_URL = "https://lbaquqyzbippicbvmcxr.supabase.co"
@@ -123,12 +121,26 @@ def main(page: ft.Page):
                 page.snack_bar.open = True
                 page.update()
 
-        # FIXED: compatible FilePicker style
-        file_picker = ft.FilePicker()
-        file_picker.on_result = on_file_result
+        # Lazy FilePicker to avoid startup crash on APKs that don't support it
+        file_picker = None
 
-        if file_picker not in page.overlay:
-            page.overlay.append(file_picker)
+        def ensure_file_picker():
+            nonlocal file_picker
+            try:
+                if file_picker is None:
+                    file_picker = ft.FilePicker()
+                    file_picker.on_result = on_file_result
+                if file_picker not in page.overlay:
+                    page.overlay.append(file_picker)
+                return True
+            except Exception as ex:
+                print(f"FilePicker not available: {ex}")
+                page.snack_bar = ft.SnackBar(
+                    ft.Text("Sélection de fichier non supportée sur cette version APK.")
+                )
+                page.snack_bar.open = True
+                page.update()
+                return False
 
         footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
 
@@ -162,7 +174,6 @@ def main(page: ft.Page):
         def refresh():
             try:
                 print(f"REFRESH VIEW => {page.view}")
-
                 screen = None
 
                 if not page.logged_in and page.view == "LOGIN":
@@ -281,7 +292,7 @@ def main(page: ft.Page):
                                             ],
                                             spacing=0,
                                         ),
-                                        ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER")),
+                                        ft.IconButton(ft.Icons.SETTINGS, on_click=lambda _: ch_v("USER")),
                                     ],
                                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                 ),
@@ -295,7 +306,7 @@ def main(page: ft.Page):
                                     [
                                         ft.ElevatedButton(
                                             "INTERVENTION TECHNIQUE",
-                                            icon=ft.icons.BUILD_CIRCLE,
+                                            icon=ft.Icons.BUILD_CIRCLE,
                                             on_click=lambda _: ch_v("INTER"),
                                             width=320,
                                             height=55,
@@ -303,7 +314,7 @@ def main(page: ft.Page):
                                         ),
                                         ft.ElevatedButton(
                                             "DEMANDE PIÈCE DE RECHANGE",
-                                            icon=ft.icons.SHOPPING_CART,
+                                            icon=ft.Icons.SHOPPING_CART,
                                             on_click=lambda _: ch_v("PART_REQ"),
                                             width=320,
                                             height=55,
@@ -311,7 +322,7 @@ def main(page: ft.Page):
                                         ),
                                         ft.ElevatedButton(
                                             "GESTION STOCK (INVENTORY)",
-                                            icon=ft.icons.INVENTORY,
+                                            icon=ft.Icons.INVENTORY,
                                             on_click=lambda _: ch_v("STOCK_MGR"),
                                             width=320,
                                             height=55,
@@ -319,21 +330,21 @@ def main(page: ft.Page):
                                         ),
                                         ft.ElevatedButton(
                                             "HISTORIQUE DES RAPPORTS",
-                                            icon=ft.icons.HISTORY,
+                                            icon=ft.Icons.HISTORY,
                                             on_click=lambda _: ch_v("HISTORY"),
                                             width=320,
                                             height=55,
                                         ),
                                         ft.ElevatedButton(
                                             "TRACKING MOULES",
-                                            icon=ft.icons.RECYCLING,
+                                            icon=ft.Icons.RECYCLING,
                                             on_click=lambda _: ch_v("MOLD"),
                                             width=320,
                                             height=55,
                                         ),
                                         ft.ElevatedButton(
                                             "CHECKS QUOTIDIENS / HEBDO",
-                                            icon=ft.icons.CHECKLIST,
+                                            icon=ft.Icons.CHECKLIST,
                                             on_click=lambda _: ch_v("ROUTINE"),
                                             width=320,
                                             height=55,
@@ -375,14 +386,14 @@ def main(page: ft.Page):
                             page.update()
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("PARAMÈTRES UTILISATEUR", weight="bold"),
                         new_name,
                         new_pw,
                         ft.ElevatedButton("METTRE À JOUR", on_click=update_profile, bgcolor="blue"),
                         ft.ElevatedButton(
                             "DÉCONNEXION",
-                            icon=ft.icons.LOGOUT,
+                            icon=ft.Icons.LOGOUT,
                             on_click=lambda _: (setattr(page, "logged_in", False), ch_v("LOGIN")),
                             bgcolor="red900",
                         ),
@@ -425,20 +436,21 @@ def main(page: ft.Page):
 
                     def pick_part_img(e):
                         page.current_upload_target = "PART"
-                        file_picker.pick_files()
+                        if ensure_file_picker():
+                            file_picker.pick_files()
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("DEMANDE DE PIÈCE DE RECHANGE", weight="bold", color="orange"),
                         p_mach,
                         p_name,
                         p_qty,
                         p_urg,
-                        ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.icons.CAMERA_ALT, on_click=pick_part_img),
+                        ft.ElevatedButton("PRENDRE PHOTO PIÈCE", icon=ft.Icons.CAMERA_ALT, on_click=pick_part_img),
                         ft.ElevatedButton("ENVOYER LA DEMANDE", on_click=save_part_req, bgcolor="orange", width=320),
                         ft.ElevatedButton(
                             "HISTORIQUE DEMANDES",
-                            icon=ft.icons.LIST_ALT,
+                            icon=ft.Icons.LIST_ALT,
                             on_click=lambda _: ch_v("PART_HISTORY"),
                             width=320,
                         ),
@@ -456,7 +468,7 @@ def main(page: ft.Page):
                                         ft.Text(f"REF: PR-2026-{r['id']} | {r['piece_nom']}", weight="bold"),
                                         ft.Text(f"Machine: {r['machine']} | Qte: {r['qte']} | Urgence: {r['urgence']}"),
                                         ft.IconButton(
-                                            ft.icons.PICTURE_AS_PDF,
+                                            ft.Icons.PICTURE_AS_PDF,
                                             icon_color="orange",
                                             on_click=lambda e, row=r: export_part_pdf(row),
                                         ),
@@ -469,7 +481,7 @@ def main(page: ft.Page):
                         )
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("PART_REQ")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("PART_REQ")), header_brand]),
                         ft.Text("HISTORIQUE DES DEMANDES PIÈCES"),
                         lv,
                         footer_tag,
@@ -490,7 +502,7 @@ def main(page: ft.Page):
                                 is_low = i["stock_qty"] <= i["min_qty"]
                                 stock_lv.controls.append(
                                     ft.ListTile(
-                                        leading=ft.Icon(ft.icons.SETTINGS_SUGGEST, color="red" if is_low else "teal"),
+                                        leading=ft.Icon(ft.Icons.SETTINGS_SUGGEST, color="red" if is_low else "teal"),
                                         title=ft.Text(f"{i['designation']} ({i['ref']})", weight="bold"),
                                         subtitle=ft.Text(f"Emplacement: {i['location']} | Cat: {i['category']}"),
                                         trailing=ft.Column(
@@ -587,25 +599,25 @@ def main(page: ft.Page):
 
                     search_stock = ft.TextField(
                         label="Chercher une pièce...",
-                        prefix_icon=ft.icons.SEARCH,
+                        prefix_icon=ft.Icons.SEARCH,
                         on_change=lambda e: build_stock_list(e.control.value),
                     )
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Row(
                             [
                                 ft.Text("GESTION DU STOCK PIÈCES", size=20, weight="bold"),
-                                ft.Icon(ft.icons.INVENTORY_2, color="teal"),
+                                ft.Icon(ft.Icons.INVENTORY_2, color="teal"),
                             ]
                         ),
                         search_stock,
                         ft.Row(
                             [
-                                ft.ElevatedButton("AJOUTER PIÈCE", icon=ft.icons.ADD, on_click=open_add_part, bgcolor="teal"),
+                                ft.ElevatedButton("AJOUTER PIÈCE", icon=ft.Icons.ADD, on_click=open_add_part, bgcolor="teal"),
                                 ft.ElevatedButton(
                                     "EXPORT EXCEL",
-                                    icon=ft.icons.FILE_DOWNLOAD,
+                                    icon=ft.Icons.FILE_DOWNLOAD,
                                     on_click=export_inventory_excel,
                                     bgcolor="green700",
                                 ),
@@ -646,7 +658,7 @@ def main(page: ft.Page):
                             page.update()
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("CHECK QUOTIDIEN", weight="bold"),
                         m_dd,
                         c_grease,
@@ -657,10 +669,10 @@ def main(page: ft.Page):
                         ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=320),
                         ft.Row(
                             [
-                                ft.ElevatedButton("HISTORIQUE", icon=ft.icons.HISTORY, on_click=lambda _: ch_v("ROUTINE_HISTORY")),
+                                ft.ElevatedButton("HISTORIQUE", icon=ft.Icons.HISTORY, on_click=lambda _: ch_v("ROUTINE_HISTORY")),
                                 ft.ElevatedButton(
                                     "RAPPORT HEBDO (PDF)",
-                                    icon=ft.icons.SUMMARIZE,
+                                    icon=ft.Icons.SUMMARIZE,
                                     on_click=generate_weekly_pdf,
                                     bgcolor="blue900",
                                 ),
@@ -693,11 +705,11 @@ def main(page: ft.Page):
                         )
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("ROUTINE")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("ROUTINE")), header_brand]),
                         ft.Text("HISTORIQUE DES INSPECTIONS", weight="bold"),
                         ft.ElevatedButton(
                             "EXPORTER EXCEL",
-                            icon=ft.icons.FILE_DOWNLOAD,
+                            icon=ft.Icons.FILE_DOWNLOAD,
                             on_click=export_routines_excel,
                             bgcolor="green700",
                         ),
@@ -747,7 +759,8 @@ def main(page: ft.Page):
 
                     def pick_img(target):
                         page.current_upload_target = target
-                        file_picker.pick_files()
+                        if ensure_file_picker():
+                            file_picker.pick_files()
 
                     def save_i(e):
                         try:
@@ -805,7 +818,7 @@ def main(page: ft.Page):
                             page.update()
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("NOUVEAU RAPPORT D'INTERVENTION", weight="bold"),
                         dem,
                         sys_dd,
@@ -814,8 +827,8 @@ def main(page: ft.Page):
                         m_type,
                         error_source,
                         error_other_desc,
-                        ft.Row([err_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("ERR"), icon_color="red")]),
-                        ft.Row([sol_desc, ft.IconButton(ft.icons.CAMERA_ALT, on_click=lambda _: pick_img("SOL"), icon_color="green")]),
+                        ft.Row([err_desc, ft.IconButton(ft.Icons.CAMERA_ALT, on_click=lambda _: pick_img("ERR"), icon_color="red")]),
+                        ft.Row([sol_desc, ft.IconButton(ft.Icons.CAMERA_ALT, on_click=lambda _: pick_img("SOL"), icon_color="green")]),
                         piec,
                         spare_price_in,
                         ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=320),
@@ -842,7 +855,7 @@ def main(page: ft.Page):
                                                 ft.Row(
                                                     [
                                                         ft.IconButton(
-                                                            ft.icons.PICTURE_AS_PDF,
+                                                            ft.Icons.PICTURE_AS_PDF,
                                                             icon_color="red",
                                                             on_click=lambda e, row=r: export_pdf(row),
                                                         )
@@ -861,16 +874,16 @@ def main(page: ft.Page):
 
                     search_bar = ft.TextField(
                         label="Chercher par machine...",
-                        prefix_icon=ft.icons.SEARCH,
+                        prefix_icon=ft.Icons.SEARCH,
                         on_change=lambda e: build_history(e.control.value),
                     )
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("HISTORIQUE DES INTERVENTIONS", size=20, weight="bold"),
                         search_bar,
                         ft.ElevatedButton(
                             "EXPORTER EXCEL (INTERVENTIONS)",
-                            icon=ft.icons.TABLE_CHART,
+                            icon=ft.Icons.TABLE_CHART,
                             on_click=export_excel,
                             width=320,
                         ),
@@ -919,7 +932,7 @@ def main(page: ft.Page):
                             page.update()
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("HOME")), header_brand]),
                         ft.Text("CHANGEMENT MOULE (SMED)", weight="bold"),
                         p_dd,
                         o_m,
@@ -927,14 +940,14 @@ def main(page: ft.Page):
                         ft.ElevatedButton("VALIDER", on_click=save_m, width=320),
                         ft.ElevatedButton(
                             "VOIR HISTORIQUE",
-                            icon=ft.icons.HISTORY,
+                            icon=ft.Icons.HISTORY,
                             on_click=lambda _: ch_v("MOLD_HISTORY"),
                             width=320,
                             bgcolor="blue900",
                         ),
                         ft.ElevatedButton(
                             "EXPORTER EXCEL (MOULES)",
-                            icon=ft.icons.TABLE_CHART,
+                            icon=ft.Icons.TABLE_CHART,
                             on_click=export_molds_excel,
                             width=320,
                             bgcolor="green700",
@@ -962,7 +975,7 @@ def main(page: ft.Page):
                         )
 
                     screen = safe_screen(
-                        ft.Row([ft.IconButton(ft.icons.ARROW_BACK, on_click=lambda _: ch_v("MOLD")), header_brand]),
+                        ft.Row([ft.IconButton(ft.Icons.ARROW_BACK, on_click=lambda _: ch_v("MOLD")), header_brand]),
                         ft.Text("HISTORIQUE DES MOULES", weight="bold"),
                         lv,
                         footer_tag,
