@@ -53,7 +53,21 @@ def main(page: ft.Page):
         page.title = "BRIKS BY OKBA - Service maintenance"
         
         # ADDED: This line intercepts the Flet red screen of death and hides it so UI updates still work!
-        page.on_error = lambda e: print(f"Ignored Flet UI Error: {e.data}")
+        def show_ui_error(e):
+    print(f"FLET UI ERROR: {e.data}")
+    page.controls.clear()
+    page.add(
+        ft.Container(
+            content=ft.Column([
+                ft.Text("UI ERROR DETECTED", color="red", size=24, weight="bold"),
+                ft.Text(str(e.data), color="white"),
+            ]),
+            padding=20
+        )
+    )
+    page.update()
+
+page.on_error = show_ui_error
         
         # --- PERMISSIONS SETUP (FIXED) ---
         # Using a safer way to request permissions that avoids the 'no attribute' error
@@ -238,33 +252,81 @@ def main(page: ft.Page):
                 )
 
             elif page.view == "HOME":
-                page.add(
-                    ft.Row([
-                        ft.Column([
-                            ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
-                            ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
-                        ], spacing=0),
-                        ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
-                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), # FIXED Alignment
-                    ft.Text(f"Opérateur: {page.display_name}", italic=True, color="grey"),
-                    ft.Divider(color="red"),
+    safe_name = getattr(page, "display_name", "Utilisateur")
+
+    page.add(
+        ft.Container(
+            content=ft.Column([
+                ft.Row([
                     ft.Column([
-                        ft.ElevatedButton("INTERVENTION TECHNIQUE", icon=ft.icons.BUILD_CIRCLE,
-                                         on_click=lambda _: ch_v("INTER"), width=320, height=55, bgcolor="blue900"),
-                        ft.ElevatedButton("DEMANDE PIÈCE DE RECHANGE", icon=ft.icons.SHOPPING_CART,
-                                         on_click=lambda _: ch_v("PART_REQ"), width=320, height=55, bgcolor="orange900"),
-                        ft.ElevatedButton("GESTION STOCK (INVENTORY)", icon=ft.icons.INVENTORY,
-                                         on_click=lambda _: ch_v("STOCK_MGR"), width=320, height=55, bgcolor="teal900"),
-                        ft.ElevatedButton("HISTORIQUE DES RAPPORTS", icon=ft.icons.HISTORY,
-                                         on_click=lambda _: ch_v("HISTORY"), width=320, height=55),
-                        ft.ElevatedButton("TRACKING MOULES", icon=ft.icons.RECYCLING,
-                                         on_click=lambda _: ch_v("MOLD"), width=320, height=55),
-                        ft.ElevatedButton("CHECKS QUOTIDIENS / HEBDO", icon=ft.icons.CHECKLIST,
-                                         on_click=lambda _: ch_v("ROUTINE"), width=320, height=55, bgcolor="green900"),
-                    ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15), # FIXED Alignment
-                    ft.Divider(),
-                    footer_tag
-                )
+                        ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
+                        ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
+                    ], spacing=0, expand=True),
+                    ft.IconButton(ft.icons.SETTINGS, on_click=lambda _: ch_v("USER"))
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+
+                ft.Text(f"Opérateur: {safe_name}", italic=True, color="grey"),
+                ft.Divider(color="red"),
+
+                ft.Column([
+                    ft.ElevatedButton(
+                        "INTERVENTION TECHNIQUE",
+                        icon=ft.icons.BUILD_CIRCLE,
+                        on_click=lambda _: ch_v("INTER"),
+                        width=320,
+                        height=55,
+                        bgcolor="blue900"
+                    ),
+                    ft.ElevatedButton(
+                        "DEMANDE PIÈCE DE RECHANGE",
+                        icon=ft.icons.SHOPPING_CART,
+                        on_click=lambda _: ch_v("PART_REQ"),
+                        width=320,
+                        height=55,
+                        bgcolor="orange900"
+                    ),
+                    ft.ElevatedButton(
+                        "GESTION STOCK (INVENTORY)",
+                        icon=ft.icons.INVENTORY,
+                        on_click=lambda _: ch_v("STOCK_MGR"),
+                        width=320,
+                        height=55,
+                        bgcolor="teal900"
+                    ),
+                    ft.ElevatedButton(
+                        "HISTORIQUE DES RAPPORTS",
+                        icon=ft.icons.HISTORY,
+                        on_click=lambda _: ch_v("HISTORY"),
+                        width=320,
+                        height=55
+                    ),
+                    ft.ElevatedButton(
+                        "TRACKING MOULES",
+                        icon=ft.icons.RECYCLING,
+                        on_click=lambda _: ch_v("MOLD"),
+                        width=320,
+                        height=55
+                    ),
+                    ft.ElevatedButton(
+                        "CHECKS QUOTIDIENS / HEBDO",
+                        icon=ft.icons.CHECKLIST,
+                        on_click=lambda _: ch_v("ROUTINE"),
+                        width=320,
+                        height=55,
+                        bgcolor="green900"
+                    ),
+                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15),
+
+                ft.Divider(),
+                footer_tag
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            scroll=ft.ScrollMode.AUTO
+            ),
+            padding=20,
+            expand=True
+        )
+)
 
             elif page.view == "USER":
                 new_name = ft.TextField(label="Nouveau Nom d'affichage", value=page.display_name)
