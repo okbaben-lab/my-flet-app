@@ -53,12 +53,12 @@ def main(page: ft.Page):
         page.title = "BRIKS BY OKBA - Service maintenance"
         
         # ADDED: This line intercepts the Flet red screen of death and hides it so UI updates still work!
-        def show_ui_error(e):
-    print(f"FLET UI ERROR: {e.data}")
-    page.controls.clear()
-    page.add(
-        ft.Container(
-            content=ft.Column([
+    def show_ui_error(e):
+        print(f"FLET UI ERROR: {e.data}")
+        page.controls.clear()
+        page.add(
+            ft.Container(
+                content=ft.Column([
                 ft.Text("UI ERROR DETECTED", color="red", size=24, weight="bold"),
                 ft.Text(str(e.data), color="white"),
             ]),
