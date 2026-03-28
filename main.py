@@ -47,7 +47,7 @@ db_conn = setup_db()
 
 def main(page: ft.Page):
     try:
-        page.title = "BRIKS BY OKBA - Service maintenance"
+        page.title = "BRIKS - Service maintenance"
         page.theme_mode = "dark"
         page.scroll = ft.ScrollMode.AUTO
         page.bgcolor = "#0f0f0f"
@@ -142,11 +142,11 @@ def main(page: ft.Page):
                 page.update()
                 return False
 
-        footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
+        footer_tag = ft.Text("BRIKS", size=10, italic=True, color="grey500")
 
         header_brand = ft.Column(
             [
-                ft.Text("BRIKS BY OKBA", size=32, weight="bold", color="red"),
+                ft.Text("BRIKS", size=32, weight="bold", color="red"),
                 ft.Text("SERVICE MAINTENANCE", size=12, color="red", italic=True),
             ],
             spacing=0,
@@ -287,7 +287,7 @@ def main(page: ft.Page):
                                     [
                                         ft.Column(
                                             [
-                                                ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
+                                                ft.Text("BRIKS", size=28, weight="bold", color="red"),
                                                 ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
                                             ],
                                             spacing=0,
@@ -892,39 +892,290 @@ def main(page: ft.Page):
                     )
                     build_history()
 
-                elif page.view == "MOLD":
-                    p_dd = ft.Dropdown(label="Presse", options=[ft.dropdown.Option(f"Presse {i+1}") for i in range(11)])
-                    o_m = ft.TextField(label="Moule Sortant", read_only=True)
-                    n_m = ft.TextField(label="Nouveau Moule")
 
-                    def on_p_change(e):
+                elif page.view == "MOLD":
+                    MODEL_PARAMS = {
+                        "D927": {"modele": "11", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "FDB1399": {"modele": "11", "matiere": "A018", "mpa": "16", "cycle": "4", "temps": "320"},
+                        "D1630": {"modele": "11", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "D1871": {"modele": "11", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "D1455": {"modele": "11", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "360"},
+                        "D1316": {"modele": "11", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "360"},
+                        "D1375": {"modele": "11", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "360"},
+                        "D1872": {"modele": "11", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "D1761": {"modele": "11", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "D497": {"modele": "11", "matiere": "A018", "mpa": "15", "cycle": "3", "temps": "300"},
+                        "D1717": {"modele": "11", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+
+                        "D1107": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "D1456": {"modele": "23", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "D340": {"modele": "23", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "FDB4349": {"modele": "23", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "D1985": {"modele": "23", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "D1108": {"modele": "23", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "D768": {"modele": "23", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "D2236": {"modele": "23", "matiere": "A018", "mpa": "25", "cycle": "4", "temps": "320"},
+                        "GDB1681": {"modele": "23", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "D1760": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "D1633": {"modele": "23", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "D2484": {"modele": "23", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "D2023": {"modele": "23", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "77368831/WVA25323": {"modele": "23", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "77368368": {"modele": "23", "matiere": "A018", "mpa": "24", "cycle": "3", "temps": "300"},
+                        "D1950": {"modele": "23", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB400": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB1216": {"modele": "23", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "D517": {"modele": "23", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "D797": {"modele": "23", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "D9026": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB1277": {"modele": "23", "matiere": "A018", "mpa": "13", "cycle": "4", "temps": "320"},
+                        "D1221": {"modele": "23", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+
+                        "GDB1761": {"modele": "46", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB3369": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB3630": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB3618": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB3494": {"modele": "46", "matiere": "A018", "mpa": "16", "cycle": "4", "temps": "320"},
+                        "GDB1992": {"modele": "46", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB2410": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB2016": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB1789": {"modele": "46", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB3434": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB3201": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB4606": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB3218": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB3330": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB3301": {"modele": "46", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB1321": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB3535": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB3195": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "FDB4947": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB254": {"modele": "46", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB3165": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB9082": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB1724": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB1718": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB1799": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB3594": {"modele": "46", "matiere": "A018", "mpa": "17", "cycle": "4", "temps": "320"},
+                        "GDB1500": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB1786": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB2193": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB2132": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB2157": {"modele": "46", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB1785": {"modele": "46", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB2044": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB3459": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB3427": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB3522": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB3374": {"modele": "46", "matiere": "A018", "mpa": "15", "cycle": "4", "temps": "320"},
+                        "GDB3396": {"modele": "46", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB1910": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB3534": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB2382": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB2248": {"modele": "46", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB8372": {"modele": "46", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB3629": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB2169": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB2373": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+
+                        "GDB2067": {"modele": "10", "matiere": "A018", "mpa": "12", "cycle": "4", "temps": "380/360"},
+                        "GDB3624": {"modele": "10", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB2036": {"modele": "10", "matiere": "A018", "mpa": "15", "cycle": "4", "temps": "320"},
+                        "GDB2056": {"modele": "10", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB1413": {"modele": "10", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB1421": {"modele": "10", "matiere": "A018", "mpa": "15", "cycle": "4", "temps": "320"},
+                        "GDB1094": {"modele": "10", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
+                        "GDB1545": {"modele": "10", "matiere": "A018", "mpa": "14", "cycle": "4", "temps": "320"},
+                        "GDB1130": {"modele": "10", "matiere": "A018", "mpa": "10", "cycle": "4", "temps": "320"},
+
+                        "GDB2159": {"modele": "20", "matiere": "A018", "mpa": "22.5", "cycle": "4", "temps": "320"},
+                        "GDB2037": {"modele": "20", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB2166": {"modele": "20", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
+                        "GDB3437": {"modele": "20", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB2068": {"modele": "20", "matiere": "A018", "mpa": "17", "cycle": "4", "temps": "320"},
+                        "GDB2062": {"modele": "20", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
+                        "GDB2076": {"modele": "20", "matiere": "A018", "mpa": "12", "cycle": "4", "temps": "320"},
+                        "GDB2098": {"modele": "20", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB671(O)": {"modele": "20", "matiere": "A018", "mpa": "15", "cycle": "4", "temps": "320"},
+                        "GDB671(I)": {"modele": "20", "matiere": "A018", "mpa": "16", "cycle": "4", "temps": "320"},
+                        "GDB2324": {"modele": "20", "matiere": "A018", "mpa": "24.5", "cycle": "4", "temps": "320"},
+                        "GDB3491": {"modele": "20", "matiere": "A018", "mpa": "19.5", "cycle": "4", "temps": "320"},
+                        "GDB7061": {"modele": "20", "matiere": "A018", "mpa": "25", "cycle": "4", "temps": "320"},
+                        "FDB5349": {"modele": "20", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB1516": {"modele": "20", "matiere": "A018", "mpa": "23", "cycle": "4", "temps": "320"},
+                        "GDB2106": {"modele": "20", "matiere": "A018", "mpa": "17", "cycle": "4", "temps": "320"},
+                        "GDB3364": {"modele": "20", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
+                        "GDB3197": {"modele": "20", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
+                        "GDB3524": {"modele": "20", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB3222": {"modele": "20", "matiere": "A018", "mpa": "25", "cycle": "4", "temps": "320"},
+                        "GDB1555": {"modele": "20", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
+                        "GDB3529": {"modele": "20", "matiere": "A018", "mpa": "12", "cycle": "4", "temps": "320"},
+                    }
+
+                    p_dd = ft.Dropdown(
+                        label="Presse",
+                        width=320,
+                        options=[ft.dropdown.Option(f"Presse {i+1}") for i in range(11)],
+                    )
+
+                    o_m = ft.TextField(label="Moule Sortant", read_only=True, width=320)
+                    n_m = ft.TextField(label="Nouveau Moule", width=320)
+                    model_no = ft.TextField(label="Modèle", width=320)
+                    matiere = ft.TextField(label="Matière", value="A018", width=320)
+                    mpa = ft.TextField(label="Mpa", width=320)
+                    cycle = ft.TextField(label="Cycle", width=320)
+                    temps = ft.TextField(label="Temps (s)", width=320)
+
+                    info_txt = ft.Text("", color="orange")
+
+                    def load_press_current_mold():
                         try:
+                            if not p_dd.value:
+                                o_m.value = ""
+                                page.update()
+                                return
+
                             res = (
-                                supabase.table("molds")
-                                .select("new_m")
-                                .eq("p_no", p_dd.value)
-                                .order("id", desc=True)
+                                supabase.table("press_current_mold")
+                                .select("*")
+                                .eq("presse", p_dd.value)
                                 .limit(1)
                                 .execute()
                             )
-                            o_m.value = res.data[0]["new_m"] if res.data else "Vide"
+
+                            if res.data:
+                                o_m.value = res.data[0].get("mold_name", "") or ""
+                            else:
+                                o_m.value = ""
+
                             page.update()
                         except Exception as ex:
-                            print("MOLD LOAD ERROR:", ex)
+                            print("PRESS CURRENT LOAD ERROR:", ex)
+
+                    def load_mold_params_by_name():
+                        try:
+                            mold_name = (n_m.value or "").strip().upper()
+                            if not mold_name:
+                                model_no.value = ""
+                                matiere.value = "A018"
+                                mpa.value = ""
+                                cycle.value = ""
+                                temps.value = ""
+                                info_txt.value = ""
+                                page.update()
+                                return
+
+                            if mold_name in MODEL_PARAMS:
+                                data = MODEL_PARAMS[mold_name]
+                                model_no.value = data.get("modele", "")
+                                matiere.value = data.get("matiere", "A018")
+                                mpa.value = data.get("mpa", "")
+                                cycle.value = data.get("cycle", "")
+                                temps.value = data.get("temps", "")
+                                info_txt.value = "Paramètres chargés automatiquement."
+                                page.update()
+                                return
+
+                            db_res = (
+                                supabase.table("mold_parameters")
+                                .select("*")
+                                .eq("mold_name", mold_name)
+                                .limit(1)
+                                .execute()
+                            )
+
+                            if db_res.data:
+                                data = db_res.data[0]
+                                model_no.value = data.get("modele", "") or ""
+                                matiere.value = data.get("matiere", "A018") or "A018"
+                                mpa.value = str(data.get("mpa", "") or "")
+                                cycle.value = str(data.get("cycle", "") or "")
+                                temps.value = str(data.get("temps", "") or "")
+                                info_txt.value = "Paramètres récupérés depuis la base."
+                            else:
+                                model_no.value = ""
+                                matiere.value = "A018"
+                                mpa.value = ""
+                                cycle.value = ""
+                                temps.value = ""
+                                info_txt.value = "Aucun paramètre trouvé. Vous pouvez les saisir puis enregistrer."
+
+                            page.update()
+                        except Exception as ex:
+                            print("LOAD MOLD PARAMS ERROR:", ex)
+
+                    def on_p_change(e):
+                        load_press_current_mold()
+
+                    def on_new_mold_change(e):
+                        load_mold_params_by_name()
 
                     p_dd.on_change = on_p_change
+                    n_m.on_change = on_new_mold_change
 
                     def save_m(e):
                         try:
+                            if not p_dd.value:
+                                page.snack_bar = ft.SnackBar(ft.Text("Choisissez une presse."))
+                                page.snack_bar.open = True
+                                page.update()
+                                return
+
+                            mold_name = (n_m.value or "").strip().upper()
+                            if not mold_name:
+                                page.snack_bar = ft.SnackBar(ft.Text("Entrez le nom du moule."))
+                                page.snack_bar.open = True
+                                page.update()
+                                return
+
+                            old_mold = (o_m.value or "").strip()
+
+                            supabase.table("mold_parameters").upsert(
+                                {
+                                    "mold_name": mold_name,
+                                    "modele": model_no.value,
+                                    "matiere": matiere.value or "A018",
+                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
+                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
+                                    "temps": temps.value,
+                                    "updated_by": page.display_name,
+                                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                },
+                                on_conflict="mold_name",
+                            ).execute()
+
+                            supabase.table("press_current_mold").upsert(
+                                {
+                                    "presse": p_dd.value,
+                                    "mold_name": mold_name,
+                                    "modele": model_no.value,
+                                    "matiere": matiere.value or "A018",
+                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
+                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
+                                    "temps": temps.value,
+                                    "updated_by": page.display_name,
+                                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                },
+                                on_conflict="presse",
+                            ).execute()
+
                             supabase.table("molds").insert(
                                 {
                                     "p_no": p_dd.value,
-                                    "old_m": o_m.value,
-                                    "new_m": n_m.value,
+                                    "old_m": old_mold,
+                                    "new_m": mold_name,
+                                    "modele": model_no.value,
+                                    "matiere": matiere.value or "A018",
+                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
+                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
+                                    "temps": temps.value,
                                     "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "user": page.display_name,
                                 }
                             ).execute()
+
+                            page.snack_bar = ft.SnackBar(ft.Text("Changement moule enregistré avec succès."))
+                            page.snack_bar.open = True
                             ch_v("HOME")
                         except Exception as ex:
                             page.snack_bar = ft.SnackBar(ft.Text(f"Erreur: {ex}"))
@@ -937,6 +1188,12 @@ def main(page: ft.Page):
                         p_dd,
                         o_m,
                         n_m,
+                        info_txt,
+                        model_no,
+                        matiere,
+                        mpa,
+                        cycle,
+                        temps,
                         ft.ElevatedButton("VALIDER", on_click=save_m, width=320),
                         ft.ElevatedButton(
                             "VOIR HISTORIQUE",
@@ -954,6 +1211,7 @@ def main(page: ft.Page):
                         ),
                         footer_tag,
                     )
+
 
                 elif page.view == "MOLD_HISTORY":
                     m_reports = supabase.table("molds").select("*").order("id", desc=True).execute().data
@@ -1014,7 +1272,7 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("routines").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_By_Okba_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                base_name = f"Briks_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
                 page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {base_name}"))
@@ -1029,7 +1287,7 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("inters").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_By_Okba_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                base_name = f"Briks_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
                 page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
@@ -1044,7 +1302,7 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("molds").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_By_Okba_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                base_name = f"Briks_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
                 page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
@@ -1059,7 +1317,7 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("inventory").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_By_Okba_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                base_name = f"Briks_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
                 page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {base_name}"))
@@ -1078,7 +1336,7 @@ def main(page: ft.Page):
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", "B", 16)
-                pdf.cell(190, 10, "BRIKS BY OKBA - RAPPORT HEBDOMADAIRE", ln=True, align="C")
+                pdf.cell(190, 10, "BRIKS - RAPPORT HEBDOMADAIRE", ln=True, align="C")
                 pdf.set_font("Arial", "", 10)
                 pdf.cell(190, 10, f"Période: du {last_week} au {datetime.now().strftime('%Y-%m-%d')}", ln=True, align="C")
                 pdf.ln(10)
@@ -1118,7 +1376,7 @@ def main(page: ft.Page):
 
                 pdf.set_font("Arial", "B", 22)
                 pdf.set_text_color(140, 0, 0)
-                pdf.cell(190, 10, "BRIKS BY OKBA", ln=True, align="C")
+                pdf.cell(190, 10, "BRIKS", ln=True, align="C")
                 pdf.set_font("Arial", "I", 10)
                 pdf.cell(190, 6, "RAPPORT D'INTERVENTION TECHNIQUE", ln=True, align="C")
                 pdf.ln(5)
