@@ -47,7 +47,7 @@ db_conn = setup_db()
 
 def main(page: ft.Page):
     try:
-        page.title = "BRIKS - Service maintenance"
+        page.title = "BRIKS BY OKBA - Service maintenance"
         page.theme_mode = "dark"
         page.scroll = ft.ScrollMode.AUTO
         page.bgcolor = "#0f0f0f"
@@ -146,7 +146,7 @@ def main(page: ft.Page):
 
         header_brand = ft.Column(
             [
-                ft.Text("BRIKS", size=32, weight="bold", color="red"),
+                ft.Text("BRIKS BY OKBA", size=32, weight="bold", color="red"),
                 ft.Text("SERVICE MAINTENANCE", size=12, color="red", italic=True),
             ],
             spacing=0,
@@ -287,7 +287,7 @@ def main(page: ft.Page):
                                     [
                                         ft.Column(
                                             [
-                                                ft.Text("BRIKS", size=28, weight="bold", color="red"),
+                                                ft.Text("BRIKS BY OKBA", size=28, weight="bold", color="red"),
                                                 ft.Text("SERVICE MAINTENANCE", size=10, color="red", italic=True),
                                             ],
                                             spacing=0,
@@ -635,6 +635,7 @@ def main(page: ft.Page):
                     c_elec = ft.Checkbox(label="Serrage électriques")
                     c_sec = ft.Checkbox(label="Test sécurité")
                     dur_in = ft.TextField(label="Temps passé (Minutes)", keyboard_type="number")
+                    remarks_in = ft.TextField(label="Remarques / Description", multiline=True, min_lines=3, max_lines=5)
 
                     def save_r(e):
                         try:
@@ -647,6 +648,7 @@ def main(page: ft.Page):
                                     "serrage": str(c_elec.value),
                                     "securite": str(c_sec.value),
                                     "duree": dur_in.value,
+                                    "remarks": remarks_in.value,
                                     "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "user": page.display_name,
                                 }
@@ -666,6 +668,7 @@ def main(page: ft.Page):
                         c_elec,
                         c_sec,
                         dur_in,
+                        remarks_in,
                         ft.ElevatedButton("SAUVEGARDER", on_click=save_r, bgcolor="green", width=320),
                         ft.Row(
                             [
@@ -676,7 +679,10 @@ def main(page: ft.Page):
                                     on_click=generate_weekly_pdf,
                                     bgcolor="blue900",
                                 ),
-                            ]
+                            ],
+                            wrap=True,
+                            spacing=10,
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         footer_tag,
                     )
@@ -696,6 +702,7 @@ def main(page: ft.Page):
                                             f"Checklist: G:{r['graissage']} H:{r['huilage']} S:{r['serrage']} Sec:{r['securite']}",
                                             size=12,
                                         ),
+                                        ft.Text(f"Remarques: {r.get('remarks', '')}", size=12, color="grey400") if r.get('remarks') else ft.Container(),
                                     ]
                                 ),
                                 padding=10,
@@ -728,8 +735,8 @@ def main(page: ft.Page):
                     sys_dd = ft.Dropdown(
                         label="Machine / Système",
                         options=[ft.dropdown.Option(m) for m in MACHINES],
+                        on_change=on_sys_change,
                     )
-                    sys_dd.on_change = on_sys_change
                     s_ens = ft.TextField(label="Sous-Ensemble")
                     m_type = ft.Dropdown(
                         label="Type Maintenance",
@@ -751,8 +758,8 @@ def main(page: ft.Page):
                             ft.dropdown.Option("Technique"),
                             ft.dropdown.Option("Autre"),
                         ],
+                        on_change=on_source_change,
                     )
-                    error_source.on_change = on_source_change
 
                     err_desc = ft.TextField(label="Identification de l'Erreur", multiline=True)
                     sol_desc = ft.TextField(label="Solution Apportée", multiline=True)
@@ -827,8 +834,22 @@ def main(page: ft.Page):
                         m_type,
                         error_source,
                         error_other_desc,
-                        ft.Row([err_desc, ft.IconButton(ft.Icons.CAMERA_ALT, on_click=lambda _: pick_img("ERR"), icon_color="red")]),
-                        ft.Row([sol_desc, ft.IconButton(ft.Icons.CAMERA_ALT, on_click=lambda _: pick_img("SOL"), icon_color="green")]),
+                        err_desc,
+                        ft.ElevatedButton(
+                            "AJOUTER PHOTO PROBLÈME",
+                            icon=ft.Icons.CAMERA_ALT,
+                            on_click=lambda _: pick_img("ERR"),
+                            bgcolor="red900",
+                            width=320,
+                        ),
+                        sol_desc,
+                        ft.ElevatedButton(
+                            "AJOUTER PHOTO SOLUTION",
+                            icon=ft.Icons.CAMERA_ALT,
+                            on_click=lambda _: pick_img("SOL"),
+                            bgcolor="green900",
+                            width=320,
+                        ),
                         piec,
                         spare_price_in,
                         ft.ElevatedButton("ENREGISTRER & DESTOCKER", on_click=save_i, bgcolor="blue", width=320),
@@ -892,7 +913,6 @@ def main(page: ft.Page):
                     )
                     build_history()
 
-
                 elif page.view == "MOLD":
                     MODEL_PARAMS = {
                         "D927": {"modele": "11", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
@@ -906,7 +926,6 @@ def main(page: ft.Page):
                         "D1761": {"modele": "11", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
                         "D497": {"modele": "11", "matiere": "A018", "mpa": "15", "cycle": "3", "temps": "300"},
                         "D1717": {"modele": "11", "matiere": "A018", "mpa": "18", "cycle": "4", "temps": "320"},
-
                         "D1107": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
                         "D1456": {"modele": "23", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
                         "D340": {"modele": "23", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
@@ -930,7 +949,6 @@ def main(page: ft.Page):
                         "D9026": {"modele": "23", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
                         "GDB1277": {"modele": "23", "matiere": "A018", "mpa": "13", "cycle": "4", "temps": "320"},
                         "D1221": {"modele": "23", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
-
                         "GDB1761": {"modele": "46", "matiere": "A018", "mpa": "22", "cycle": "4", "temps": "320"},
                         "GDB3369": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
                         "GDB3630": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
@@ -977,7 +995,6 @@ def main(page: ft.Page):
                         "GDB3629": {"modele": "46", "matiere": "A018", "mpa": "21", "cycle": "4", "temps": "320"},
                         "GDB2169": {"modele": "46", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
                         "GDB2373": {"modele": "46", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
-
                         "GDB2067": {"modele": "10", "matiere": "A018", "mpa": "12", "cycle": "4", "temps": "380/360"},
                         "GDB3624": {"modele": "10", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
                         "GDB2036": {"modele": "10", "matiere": "A018", "mpa": "15", "cycle": "4", "temps": "320"},
@@ -987,7 +1004,6 @@ def main(page: ft.Page):
                         "GDB1094": {"modele": "10", "matiere": "A018", "mpa": "24", "cycle": "4", "temps": "320"},
                         "GDB1545": {"modele": "10", "matiere": "A018", "mpa": "14", "cycle": "4", "temps": "320"},
                         "GDB1130": {"modele": "10", "matiere": "A018", "mpa": "10", "cycle": "4", "temps": "320"},
-
                         "GDB2159": {"modele": "20", "matiere": "A018", "mpa": "22.5", "cycle": "4", "temps": "320"},
                         "GDB2037": {"modele": "20", "matiere": "A018", "mpa": "19", "cycle": "4", "temps": "320"},
                         "GDB2166": {"modele": "20", "matiere": "A018", "mpa": "20", "cycle": "4", "temps": "320"},
@@ -1017,7 +1033,6 @@ def main(page: ft.Page):
                         width=320,
                         options=[ft.dropdown.Option(f"Presse {i+1}") for i in range(11)],
                     )
-
                     o_m = ft.TextField(label="Moule Sortant", read_only=True, width=320)
                     n_m = ft.TextField(label="Nouveau Moule", width=320)
                     model_no = ft.TextField(label="Modèle", width=320)
@@ -1025,156 +1040,208 @@ def main(page: ft.Page):
                     mpa = ft.TextField(label="Mpa", width=320)
                     cycle = ft.TextField(label="Cycle", width=320)
                     temps = ft.TextField(label="Temps (s)", width=320)
-
                     info_txt = ft.Text("", color="orange")
+
+                    def fill_params_from_data(data, mold_name=""):
+                        o_m.value = mold_name or o_m.value or ""
+                        model_no.value = str(data.get("modele", "") or "")
+                        matiere.value = str(data.get("matiere", "A018") or "A018")
+                        mpa.value = str(data.get("mpa", "") or "")
+                        cycle.value = str(data.get("cycle", "") or "")
+                        temps.value = str(data.get("temps", "") or "")
+
+                    def clear_params(keep_old=False):
+                        if not keep_old:
+                            o_m.value = ""
+                        model_no.value = ""
+                        matiere.value = "A018"
+                        mpa.value = ""
+                        cycle.value = ""
+                        temps.value = ""
+
+                    def load_known_params(mold_name):
+                        mold_key = (mold_name or "").strip().upper()
+                        if not mold_key:
+                            return False
+                        if mold_key in MODEL_PARAMS:
+                            fill_params_from_data(MODEL_PARAMS[mold_key], mold_key)
+                            return True
+                        try:
+                            db_res = (
+                                supabase.table("mold_parameters")
+                                .select("*")
+                                .eq("mold_name", mold_key)
+                                .limit(1)
+                                .execute()
+                            )
+                            if db_res.data:
+                                fill_params_from_data(db_res.data[0], mold_key)
+                                return True
+                        except Exception as ex:
+                            print("LOAD MOLD PARAMS ERROR:", ex)
+                        return False
 
                     def load_press_current_mold():
                         try:
                             if not p_dd.value:
-                                o_m.value = ""
-                                page.update()
-                                return
-
-                            res = (
-                                supabase.table("press_current_mold")
-                                .select("*")
-                                .eq("presse", p_dd.value)
-                                .limit(1)
-                                .execute()
-                            )
-
-                            if res.data:
-                                o_m.value = res.data[0].get("mold_name", "") or ""
-                            else:
-                                o_m.value = ""
-
-                            page.update()
-                        except Exception as ex:
-                            print("PRESS CURRENT LOAD ERROR:", ex)
-
-                    def load_mold_params_by_name():
-                        try:
-                            mold_name = (n_m.value or "").strip().upper()
-                            if not mold_name:
-                                model_no.value = ""
-                                matiere.value = "A018"
-                                mpa.value = ""
-                                cycle.value = ""
-                                temps.value = ""
+                                clear_params()
                                 info_txt.value = ""
                                 page.update()
                                 return
 
-                            if mold_name in MODEL_PARAMS:
-                                data = MODEL_PARAMS[mold_name]
-                                model_no.value = data.get("modele", "")
-                                matiere.value = data.get("matiere", "A018")
-                                mpa.value = data.get("mpa", "")
-                                cycle.value = data.get("cycle", "")
-                                temps.value = data.get("temps", "")
-                                info_txt.value = "Paramètres chargés automatiquement."
-                                page.update()
-                                return
+                            current_mold = ""
+                            latest_params = None
 
-                            db_res = (
-                                supabase.table("mold_parameters")
-                                .select("*")
-                                .eq("mold_name", mold_name)
-                                .limit(1)
-                                .execute()
-                            )
+                            try:
+                                res = (
+                                    supabase.table("press_current_mold")
+                                    .select("*")
+                                    .eq("presse", p_dd.value)
+                                    .limit(1)
+                                    .execute()
+                                )
+                                if res.data:
+                                    row = res.data[0]
+                                    current_mold = row.get("mold_name", "") or ""
+                                    latest_params = row
+                            except Exception as ex:
+                                print("PRESS CURRENT LOAD ERROR:", ex)
 
-                            if db_res.data:
-                                data = db_res.data[0]
-                                model_no.value = data.get("modele", "") or ""
-                                matiere.value = data.get("matiere", "A018") or "A018"
-                                mpa.value = str(data.get("mpa", "") or "")
-                                cycle.value = str(data.get("cycle", "") or "")
-                                temps.value = str(data.get("temps", "") or "")
-                                info_txt.value = "Paramètres récupérés depuis la base."
+                            if not current_mold:
+                                res = (
+                                    supabase.table("molds")
+                                    .select("*")
+                                    .eq("p_no", p_dd.value)
+                                    .order("id", desc=True)
+                                    .limit(1)
+                                    .execute()
+                                )
+                                if res.data:
+                                    row = res.data[0]
+                                    current_mold = row.get("new_m", "") or ""
+                                    latest_params = row
+
+                            o_m.value = current_mold
+
+                            if latest_params and any(latest_params.get(k) not in (None, "") for k in ["modele", "matiere", "mpa", "cycle", "temps"]):
+                                fill_params_from_data(latest_params, current_mold)
+                                info_txt.value = "Moule sortant et paramètres chargés automatiquement."
+                            elif current_mold and load_known_params(current_mold):
+                                o_m.value = current_mold
+                                info_txt.value = "Moule sortant et paramètres chargés automatiquement."
                             else:
-                                model_no.value = ""
-                                matiere.value = "A018"
-                                mpa.value = ""
-                                cycle.value = ""
-                                temps.value = ""
-                                info_txt.value = "Aucun paramètre trouvé. Vous pouvez les saisir puis enregistrer."
+                                clear_params(keep_old=True)
+                                info_txt.value = "Aucun paramètre trouvé pour le moule sortant."
 
                             page.update()
                         except Exception as ex:
-                            print("LOAD MOLD PARAMS ERROR:", ex)
+                            print("MOLD LOAD ERROR:", ex)
 
                     def on_p_change(e):
                         load_press_current_mold()
 
                     def on_new_mold_change(e):
-                        load_mold_params_by_name()
+                        mold_name = (n_m.value or "").strip().upper()
+                        if not mold_name:
+                            info_txt.value = ""
+                            load_press_current_mold()
+                            return
+                        if load_known_params(mold_name):
+                            info_txt.value = "Paramètres du nouveau moule chargés automatiquement."
+                        else:
+                            model_no.value = ""
+                            matiere.value = "A018"
+                            mpa.value = ""
+                            cycle.value = ""
+                            temps.value = ""
+                            info_txt.value = "Aucun paramètre trouvé. Saisissez-les puis validez."
+                        page.update()
 
                     p_dd.on_change = on_p_change
                     n_m.on_change = on_new_mold_change
 
                     def save_m(e):
                         try:
+                            mold_name = (n_m.value or "").strip().upper()
                             if not p_dd.value:
                                 page.snack_bar = ft.SnackBar(ft.Text("Choisissez une presse."))
                                 page.snack_bar.open = True
                                 page.update()
                                 return
-
-                            mold_name = (n_m.value or "").strip().upper()
                             if not mold_name:
-                                page.snack_bar = ft.SnackBar(ft.Text("Entrez le nom du moule."))
+                                page.snack_bar = ft.SnackBar(ft.Text("Entrez le nouveau moule."))
                                 page.snack_bar.open = True
                                 page.update()
                                 return
 
-                            old_mold = (o_m.value or "").strip()
+                            try:
+                                supabase.table("mold_parameters").upsert(
+                                    {
+                                        "mold_name": mold_name,
+                                        "modele": model_no.value,
+                                        "matiere": matiere.value or "A018",
+                                        "mpa": mpa.value if mpa.value != "" else None,
+                                        "cycle": cycle.value if cycle.value != "" else None,
+                                        "temps": temps.value,
+                                        "updated_by": page.display_name,
+                                        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    },
+                                    on_conflict="mold_name",
+                                ).execute()
+                            except Exception as ex:
+                                print("MOLD PARAM SAVE ERROR:", ex)
 
-                            supabase.table("mold_parameters").upsert(
-                                {
-                                    "mold_name": mold_name,
-                                    "modele": model_no.value,
-                                    "matiere": matiere.value or "A018",
-                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
-                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
-                                    "temps": temps.value,
-                                    "updated_by": page.display_name,
-                                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                },
-                                on_conflict="mold_name",
-                            ).execute()
+                            try:
+                                supabase.table("press_current_mold").upsert(
+                                    {
+                                        "presse": p_dd.value,
+                                        "mold_name": mold_name,
+                                        "modele": model_no.value,
+                                        "matiere": matiere.value or "A018",
+                                        "mpa": mpa.value if mpa.value != "" else None,
+                                        "cycle": cycle.value if cycle.value != "" else None,
+                                        "temps": temps.value,
+                                        "updated_by": page.display_name,
+                                        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    },
+                                    on_conflict="presse",
+                                ).execute()
+                            except Exception as ex:
+                                print("PRESS CURRENT SAVE ERROR:", ex)
 
-                            supabase.table("press_current_mold").upsert(
-                                {
-                                    "presse": p_dd.value,
-                                    "mold_name": mold_name,
-                                    "modele": model_no.value,
-                                    "matiere": matiere.value or "A018",
-                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
-                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
-                                    "temps": temps.value,
-                                    "updated_by": page.display_name,
-                                    "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                },
-                                on_conflict="presse",
-                            ).execute()
+                            payload = {
+                                "p_no": p_dd.value,
+                                "old_m": o_m.value,
+                                "new_m": mold_name,
+                                "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "user": page.display_name,
+                            }
+                            try:
+                                payload.update(
+                                    {
+                                        "modele": model_no.value,
+                                        "matiere": matiere.value or "A018",
+                                        "mpa": mpa.value if mpa.value != "" else None,
+                                        "cycle": cycle.value if cycle.value != "" else None,
+                                        "temps": temps.value,
+                                    }
+                                )
+                            except Exception:
+                                pass
 
-                            supabase.table("molds").insert(
-                                {
+                            try:
+                                supabase.table("molds").insert(payload).execute()
+                            except Exception:
+                                fallback_payload = {
                                     "p_no": p_dd.value,
-                                    "old_m": old_mold,
+                                    "old_m": o_m.value,
                                     "new_m": mold_name,
-                                    "modele": model_no.value,
-                                    "matiere": matiere.value or "A018",
-                                    "mpa": float(mpa.value) if mpa.value not in ("", None) else None,
-                                    "cycle": int(cycle.value) if cycle.value not in ("", None) else None,
-                                    "temps": temps.value,
                                     "dt": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "user": page.display_name,
                                 }
-                            ).execute()
+                                supabase.table("molds").insert(fallback_payload).execute()
 
-                            page.snack_bar = ft.SnackBar(ft.Text("Changement moule enregistré avec succès."))
+                            page.snack_bar = ft.SnackBar(ft.Text("Changement moule enregistré."))
                             page.snack_bar.open = True
                             ch_v("HOME")
                         except Exception as ex:
@@ -1211,7 +1278,6 @@ def main(page: ft.Page):
                         ),
                         footer_tag,
                     )
-
 
                 elif page.view == "MOLD_HISTORY":
                     m_reports = supabase.table("molds").select("*").order("id", desc=True).execute().data
@@ -1268,7 +1334,7 @@ def main(page: ft.Page):
                     page.add(content_area)
                 page.update()
 
-        def get_downloads_dir():
+        def get_download_dir():
             candidates = [
                 "/storage/emulated/0/Download",
                 os.path.join(os.path.expanduser("~"), "Download"),
@@ -1286,41 +1352,48 @@ def main(page: ft.Page):
                     continue
             return tempfile.gettempdir()
 
-        def open_exported_file(file_path):
-            try:
-                file_url = f"file://{file_path}"
-                if hasattr(page, "launch_url"):
-                    page.launch_url(file_url)
-                return True
-            except Exception as ex:
-                print(f"OPEN FILE ERROR: {ex}")
-                return False
+        def save_export_file(base_name, writer_callback):
+            folder = get_download_dir()
+            filename = os.path.join(folder, base_name)
+            writer_callback(filename)
+            return filename, folder
 
-        def notify_export_success(label, file_path):
+        def try_open_file(filepath):
+            opened = False
             try:
-                base_name = os.path.basename(file_path)
-                opened = open_exported_file(file_path)
-                msg = f"{label} : {base_name}"
-                if opened:
-                    msg += " | ouverture automatique..."
-                else:
-                    msg += f" | dossier: {os.path.dirname(file_path)}"
-                page.snack_bar = ft.SnackBar(ft.Text(msg))
-                page.snack_bar.open = True
-                page.update()
+                if hasattr(page, "launch_url"):
+                    page.launch_url(f"file://{filepath}")
+                    opened = True
             except Exception as ex:
-                page.snack_bar = ft.SnackBar(ft.Text(f"Export ok, mais ouverture impossible: {ex}"))
-                page.snack_bar.open = True
-                page.update()
+                print(f"launch_url open failed: {ex}")
+
+            if not opened:
+                try:
+                    import subprocess
+                    subprocess.Popen(["xdg-open", filepath])
+                    opened = True
+                except Exception as ex:
+                    print(f"xdg-open failed: {ex}")
+
+            base_name = os.path.basename(filepath)
+            folder = os.path.dirname(filepath)
+            msg = f"Exporté : {base_name} | Dossier: {folder}"
+            if not opened:
+                msg += " | Ouvrez-le manuellement depuis Téléchargements"
+            page.snack_bar = ft.SnackBar(ft.Text(msg))
+            page.snack_bar.open = True
+            page.update()
 
         def export_routines_excel(e=None):
             try:
                 data = supabase.table("routines").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(get_downloads_dir(), base_name)
+                base_name = f"Briks_By_Okba_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
-                notify_export_success("Export Excel réussi", filename)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {base_name}"))
+                page.snack_bar.open = True
+                page.update()
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1330,10 +1403,12 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("inters").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(get_downloads_dir(), base_name)
+                base_name = f"Briks_By_Okba_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
-                notify_export_success("Export Excel réussi", filename)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
+                page.snack_bar.open = True
+                page.update()
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1343,10 +1418,12 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("molds").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(get_downloads_dir(), base_name)
+                base_name = f"Briks_By_Okba_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
-                notify_export_success("Export Excel réussi", filename)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
+                page.snack_bar.open = True
+                page.update()
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1356,10 +1433,12 @@ def main(page: ft.Page):
             try:
                 data = supabase.table("inventory").select("*").execute().data
                 df = pd.DataFrame(data)
-                base_name = f"Briks_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(get_downloads_dir(), base_name)
+                base_name = f"Briks_By_Okba_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                filename = os.path.join(tempfile.gettempdir(), base_name)
                 df.to_excel(filename, index=False)
-                notify_export_success("Export inventaire réussi", filename)
+                page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {base_name}"))
+                page.snack_bar.open = True
+                page.update()
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1373,7 +1452,7 @@ def main(page: ft.Page):
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", "B", 16)
-                pdf.cell(190, 10, "BRIKS - RAPPORT HEBDOMADAIRE", ln=True, align="C")
+                pdf.cell(190, 10, "BRIKS BY OKBA - RAPPORT HEBDOMADAIRE", ln=True, align="C")
                 pdf.set_font("Arial", "", 10)
                 pdf.cell(190, 10, f"Période: du {last_week} au {datetime.now().strftime('%Y-%m-%d')}", ln=True, align="C")
                 pdf.ln(10)
@@ -1395,10 +1474,8 @@ def main(page: ft.Page):
                     pdf.ln()
 
                 base_name = f"Rapport_Hebdo_{datetime.now().strftime('%Y%W')}.pdf"
-                fname = os.path.join(get_downloads_dir(), base_name)
-                pdf.output(fname)
-
-                notify_export_success("Rapport hebdo créé", fname)
+                fname, _ = save_export_file(base_name, lambda f: pdf.output(f))
+                try_open_file(fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur : {ex}"))
                 page.snack_bar.open = True
@@ -1411,7 +1488,7 @@ def main(page: ft.Page):
 
                 pdf.set_font("Arial", "B", 22)
                 pdf.set_text_color(140, 0, 0)
-                pdf.cell(190, 10, "BRIKS", ln=True, align="C")
+                pdf.cell(190, 10, "BRIKS BY OKBA", ln=True, align="C")
                 pdf.set_font("Arial", "I", 10)
                 pdf.cell(190, 6, "RAPPORT D'INTERVENTION TECHNIQUE", ln=True, align="C")
                 pdf.ln(5)
@@ -1471,10 +1548,8 @@ def main(page: ft.Page):
                 pdf.cell(95, 5, "Service Maintenance", align="C", ln=True)
 
                 base_name = f"Rapport_{row.get('id', 'N')}_{datetime.now().strftime('%H%M%S')}.pdf"
-                fname = os.path.join(get_downloads_dir(), base_name)
-                pdf.output(fname)
-
-                notify_export_success("Rapport PDF généré", fname)
+                fname, _ = save_export_file(base_name, lambda f: pdf.output(f))
+                try_open_file(fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur PDF: {ex}"))
                 page.snack_bar.open = True
@@ -1505,10 +1580,8 @@ def main(page: ft.Page):
                         pass
 
                 base_name = f"Demande_Piece_{row.get('id', 'N')}.pdf"
-                fname = os.path.join(get_downloads_dir(), base_name)
-                pdf.output(fname)
-
-                notify_export_success("PDF généré", fname)
+                fname, _ = save_export_file(base_name, lambda f: pdf.output(f))
+                try_open_file(fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur PDF: {ex}"))
                 page.snack_bar.open = True
