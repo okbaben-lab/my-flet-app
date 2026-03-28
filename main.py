@@ -142,7 +142,7 @@ def main(page: ft.Page):
                 page.update()
                 return False
 
-        footer_tag = ft.Text("BRIKS", size=10, italic=True, color="grey500")
+        footer_tag = ft.Text("Made by Okba Bennaim", size=10, italic=True, color="grey500")
 
         header_brand = ft.Column(
             [
@@ -728,8 +728,8 @@ def main(page: ft.Page):
                     sys_dd = ft.Dropdown(
                         label="Machine / Système",
                         options=[ft.dropdown.Option(m) for m in MACHINES],
-                        on_change=on_sys_change,
                     )
+                    sys_dd.on_change = on_sys_change
                     s_ens = ft.TextField(label="Sous-Ensemble")
                     m_type = ft.Dropdown(
                         label="Type Maintenance",
@@ -751,8 +751,8 @@ def main(page: ft.Page):
                             ft.dropdown.Option("Technique"),
                             ft.dropdown.Option("Autre"),
                         ],
-                        on_change=on_source_change,
                     )
+                    error_source.on_change = on_source_change
 
                     err_desc = ft.TextField(label="Identification de l'Erreur", multiline=True)
                     sol_desc = ft.TextField(label="Solution Apportée", multiline=True)
@@ -1268,16 +1268,59 @@ def main(page: ft.Page):
                     page.add(content_area)
                 page.update()
 
+        def get_downloads_dir():
+            candidates = [
+                "/storage/emulated/0/Download",
+                os.path.join(os.path.expanduser("~"), "Download"),
+                tempfile.gettempdir(),
+            ]
+            for folder in candidates:
+                try:
+                    os.makedirs(folder, exist_ok=True)
+                    test_file = os.path.join(folder, ".briks_write_test")
+                    with open(test_file, "w", encoding="utf-8") as f:
+                        f.write("ok")
+                    os.remove(test_file)
+                    return folder
+                except Exception:
+                    continue
+            return tempfile.gettempdir()
+
+        def open_exported_file(file_path):
+            try:
+                file_url = f"file://{file_path}"
+                if hasattr(page, "launch_url"):
+                    page.launch_url(file_url)
+                return True
+            except Exception as ex:
+                print(f"OPEN FILE ERROR: {ex}")
+                return False
+
+        def notify_export_success(label, file_path):
+            try:
+                base_name = os.path.basename(file_path)
+                opened = open_exported_file(file_path)
+                msg = f"{label} : {base_name}"
+                if opened:
+                    msg += " | ouverture automatique..."
+                else:
+                    msg += f" | dossier: {os.path.dirname(file_path)}"
+                page.snack_bar = ft.SnackBar(ft.Text(msg))
+                page.snack_bar.open = True
+                page.update()
+            except Exception as ex:
+                page.snack_bar = ft.SnackBar(ft.Text(f"Export ok, mais ouverture impossible: {ex}"))
+                page.snack_bar.open = True
+                page.update()
+
         def export_routines_excel(e=None):
             try:
                 data = supabase.table("routines").select("*").execute().data
                 df = pd.DataFrame(data)
                 base_name = f"Briks_Daily_Inspections_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(tempfile.gettempdir(), base_name)
+                filename = os.path.join(get_downloads_dir(), base_name)
                 df.to_excel(filename, index=False)
-                page.snack_bar = ft.SnackBar(ft.Text(f"Exporté : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Export Excel réussi", filename)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1288,11 +1331,9 @@ def main(page: ft.Page):
                 data = supabase.table("inters").select("*").execute().data
                 df = pd.DataFrame(data)
                 base_name = f"Briks_Rapports_Global_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(tempfile.gettempdir(), base_name)
+                filename = os.path.join(get_downloads_dir(), base_name)
                 df.to_excel(filename, index=False)
-                page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Export Excel réussi", filename)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1303,11 +1344,9 @@ def main(page: ft.Page):
                 data = supabase.table("molds").select("*").execute().data
                 df = pd.DataFrame(data)
                 base_name = f"Briks_Tracking_Moules_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(tempfile.gettempdir(), base_name)
+                filename = os.path.join(get_downloads_dir(), base_name)
                 df.to_excel(filename, index=False)
-                page.snack_bar = ft.SnackBar(ft.Text(f"Excel exporté : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Export Excel réussi", filename)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1318,11 +1357,9 @@ def main(page: ft.Page):
                 data = supabase.table("inventory").select("*").execute().data
                 df = pd.DataFrame(data)
                 base_name = f"Briks_Stock_Inventory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-                filename = os.path.join(tempfile.gettempdir(), base_name)
+                filename = os.path.join(get_downloads_dir(), base_name)
                 df.to_excel(filename, index=False)
-                page.snack_bar = ft.SnackBar(ft.Text(f"Inventaire exporté : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Export inventaire réussi", filename)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur export: {ex}"))
                 page.snack_bar.open = True
@@ -1358,12 +1395,10 @@ def main(page: ft.Page):
                     pdf.ln()
 
                 base_name = f"Rapport_Hebdo_{datetime.now().strftime('%Y%W')}.pdf"
-                fname = os.path.join(tempfile.gettempdir(), base_name)
+                fname = os.path.join(get_downloads_dir(), base_name)
                 pdf.output(fname)
 
-                page.snack_bar = ft.SnackBar(ft.Text(f"Rapport Hebdo créé: {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Rapport hebdo créé", fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur : {ex}"))
                 page.snack_bar.open = True
@@ -1436,12 +1471,10 @@ def main(page: ft.Page):
                 pdf.cell(95, 5, "Service Maintenance", align="C", ln=True)
 
                 base_name = f"Rapport_{row.get('id', 'N')}_{datetime.now().strftime('%H%M%S')}.pdf"
-                fname = os.path.join(tempfile.gettempdir(), base_name)
+                fname = os.path.join(get_downloads_dir(), base_name)
                 pdf.output(fname)
 
-                page.snack_bar = ft.SnackBar(ft.Text(f"Rapport PDF généré : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("Rapport PDF généré", fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur PDF: {ex}"))
                 page.snack_bar.open = True
@@ -1472,12 +1505,10 @@ def main(page: ft.Page):
                         pass
 
                 base_name = f"Demande_Piece_{row.get('id', 'N')}.pdf"
-                fname = os.path.join(tempfile.gettempdir(), base_name)
+                fname = os.path.join(get_downloads_dir(), base_name)
                 pdf.output(fname)
 
-                page.snack_bar = ft.SnackBar(ft.Text(f"PDF généré : {base_name}"))
-                page.snack_bar.open = True
-                page.update()
+                notify_export_success("PDF généré", fname)
             except Exception as ex:
                 page.snack_bar = ft.SnackBar(ft.Text(f"Erreur PDF: {ex}"))
                 page.snack_bar.open = True
