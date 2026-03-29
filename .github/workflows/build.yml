@@ -3,8 +3,7 @@ name: Build Briks APK
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -34,7 +33,6 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install \
             flet \
-            flet-camera \
             supabase \
             pandas \
             openpyxl \
@@ -46,9 +44,7 @@ jobs:
         run: |
           echo "y" | flet build apk \
             --permissions camera \
-            --android-permissions android.permission.CAMERA=true \
-            --android-permissions android.permission.READ_EXTERNAL_STORAGE=true \
-            --android-permissions android.permission.WRITE_EXTERNAL_STORAGE=true
+            --android-permissions android.permission.INTERNET=true android.permission.CAMERA=true android.permission.READ_EXTERNAL_STORAGE=true android.permission.WRITE_EXTERNAL_STORAGE=true android.permission.MANAGE_EXTERNAL_STORAGE=true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
